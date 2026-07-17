@@ -1,0 +1,12 @@
+
+### 2.3 创建 `backend/requirements.txt`
+
+flask==2.3.3
+flask-cors==4.0.0
+flasgger==0.9.7.1
+elasticsearch==7.17.9
+redis==4.5.5
+pyhive==0.7.0
+pandas==2.0.3
+numpy==1.24.3
+python-dotenv==1.0.0

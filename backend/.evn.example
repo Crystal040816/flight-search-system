@@ -1,0 +1,18 @@
+# Flask
+FLASK_ENV=development
+SECRET_KEY=your-secret-key
+
+# Elasticsearch
+ES_HOST=localhost
+ES_PORT=9200
+ES_INDEX=flights
+
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_DB=0
+CACHE_EXPIRE=300
+
+# Hive
+HIVE_HOST=localhost
+HIVE_PORT=10000
