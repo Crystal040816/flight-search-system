@@ -5,18 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f762ef42-4659-4b92-81c8-3a17156ffc59" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/backend/app/api/destination.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/app/models/request.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/app/models/response.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/pictures/天空.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/views/Agent.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/views/DestinationMap.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/views/PricePredictor.vue" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/flight-search-system.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/flight-search-system.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/app/api/_init_.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/api/_init_.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/app/api/predict.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/api/predict.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/app/api/recommend.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/api/recommend.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/app/api/search.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/api/search.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/app/api/splice.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/api/splice.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/app/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/app/models/flight.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/models/flight.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -33,9 +27,9 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 0
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 0
+}</component>
   <component name="ProjectId" id="3GbuX1z4YZMEAhyA0leH9zU24yp" />
   <component name="ProjectLevelVcsManager">
     <ConfirmationsSetting value="2" id="Add" />
@@ -49,13 +43,21 @@
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "develop"
+    "git-widget-placeholder": "feature/frontend",
+    "last_opened_file_path": "D:/Anaconda/ANACONDA/project/flight-search-system/frontend/flight-search-system/src/views",
+    "settings.editor.selected.configurable": "preferences.fileTypes"
   }
 }]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\Anaconda\ANACONDA\project\flight-search-system\frontend\flight-search-system\src\views" />
+      <recent name="D:\Anaconda\ANACONDA\project\flight-search-system\frontend\flight-search-system\src\pictures" />
+    </key>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-dfff61a61320-9cdd278e9d02-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-251.25410.159" />
+        <option value="bundled-python-sdk-657d8234b839-64d779b69b7a-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-251.26927.74" />
       </set>
     </attachedChunks>
   </component>
@@ -68,5 +70,16 @@
       <updated>1784252625417</updated>
     </task>
     <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
 </project>
