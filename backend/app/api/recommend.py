@@ -5,6 +5,7 @@ from flasgger import swag_from
 from app.models.request import RecommendRequest
 from app.models.response import UnifiedResponse
 from app.models.flight import Flight
+from app.services.recommend_service import recommend_service
 
 recommend_bp = Blueprint('recommend', __name__, url_prefix='/api')
 
@@ -66,42 +67,57 @@ def recommend():
                 return UnifiedResponse.bad_request(f"缺少必填参数: {field}")
 
         # TODO: 组员B提供推荐算法
-        # 当前返回 Mock 数据
-        mock_recommendations = [
-            {
-                "rank": 1,
-                "reason": "价格最低，性价比最高",
-                "flight": Flight(
-                    flightNumber="CA1234",
-                    departureTime=f"{data.get('flightDate')} 08:00",
-                    arrivalTime=f"{data.get('flightDate')} 10:30",
-                    duration="2h30m",
-                    stops=0,
-                    airline="中国国航",
-                    airlineCode="CA",
-                    price=1200
-                ).to_dict()
-            },
-            {
-                "rank": 2,
-                "reason": "总时长最短，直飞无中转",
-                "flight": Flight(
-                    flightNumber="MU5678",
-                    departureTime=f"{data.get('flightDate')} 07:00",
-                    arrivalTime=f"{data.get('flightDate')} 09:00",
-                    duration="2h0m",
-                    stops=0,
-                    airline="东方航空",
-                    airlineCode="MU",
-                    price=1500
-                ).to_dict()
-            }
-        ]
+        departure = data.get('departure')
+        destination = data.get('destination')
+        flight_date = data.get('flightDate')
+        preferences = data.get('preferences', {})
+
+        # 调用服务层：进行多维度推荐打分并写入 Redis 缓存
+        recommendations = recommend_service.get_recommendations(
+            departure, destination, flight_date, preferences
+        )
 
         return UnifiedResponse.success({
-            "recommendations": mock_recommendations,
-            "total": len(mock_recommendations)
+            "recommendations": recommendations,
+            "total": len(recommendations)
         })
+
+        # # 当前返回 Mock 数据
+        # mock_recommendations = [
+        #     {
+        #         "rank": 1,
+        #         "reason": "价格最低，性价比最高",
+        #         "flight": Flight(
+        #             flightNumber="CA1234",
+        #             departureTime=f"{data.get('flightDate')} 08:00",
+        #             arrivalTime=f"{data.get('flightDate')} 10:30",
+        #             duration="2h30m",
+        #             stops=0,
+        #             airline="中国国航",
+        #             airlineCode="CA",
+        #             price=1200
+        #         ).to_dict()
+        #     },
+        #     {
+        #         "rank": 2,
+        #         "reason": "总时长最短，直飞无中转",
+        #         "flight": Flight(
+        #             flightNumber="MU5678",
+        #             departureTime=f"{data.get('flightDate')} 07:00",
+        #             arrivalTime=f"{data.get('flightDate')} 09:00",
+        #             duration="2h0m",
+        #             stops=0,
+        #             airline="东方航空",
+        #             airlineCode="MU",
+        #             price=1500
+        #         ).to_dict()
+        #     }
+        # ]
+        #
+        # return UnifiedResponse.success({
+        #     "recommendations": mock_recommendations,
+        #     "total": len(mock_recommendations)
+        # })
 
     except Exception as e:
         return UnifiedResponse.error(f"服务器错误: {str(e)}")
