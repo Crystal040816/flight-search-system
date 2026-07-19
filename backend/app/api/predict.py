@@ -4,6 +4,8 @@ from flasgger import swag_from
 
 from app.models.request import PredictRequest
 from app.models.response import UnifiedResponse
+from app.services import predict_service
+from app.services.predict_service import price_predict_service
 
 predict_bp = Blueprint('predict', __name__, url_prefix='/api')
 
@@ -71,19 +73,27 @@ def predict_price():
                 return UnifiedResponse.bad_request(f"缺少必填参数: {field}")
 
         # TODO: 组员B提供价格预测模型
-        # 当前返回 Mock 数据
-        mock_data = {
-            "departure": data.get('departure', 'PEK'),
-            "destination": data.get('destination', 'PVG'),
-            "flightDate": data.get('flightDate'),
-            "predictedPrice": 850,
-            "currency": "CNY",
-            "confidence_lower": 780,
-            "confidence_upper": 920,
-            "bestTimeToBuy": "2026-07-10"
-        }
+        departure = data.get('departure')
+        destination = data.get('destination')
+        flight_date = data.get('flightDate')
 
-        return UnifiedResponse.success(mock_data)
+        # 调用服务层：内部已集成 Redis 缓存与组员B的机器学习模型
+        result = price_predict_service.predict_price_trend(departure, destination, flight_date)
+
+        return UnifiedResponse.success(result)
+        # 当前返回 Mock 数据
+        # mock_data = {
+        #     "departure": data.get('departure', 'PEK'),
+        #     "destination": data.get('destination', 'PVG'),
+        #     "flightDate": data.get('flightDate'),
+        #     "predictedPrice": 850,
+        #     "currency": "CNY",
+        #     "confidence_lower": 780,
+        #     "confidence_upper": 920,
+        #     "bestTimeToBuy": "2026-07-10"
+        # }
+        #
+        # return UnifiedResponse.success(mock_data)
 
     except Exception as e:
         return UnifiedResponse.error(f"服务器错误: {str(e)}")

@@ -5,6 +5,7 @@ from flasgger import swag_from
 from app.models.request import DestinationsRequest
 from app.models.response import UnifiedResponse
 from app.models.flight import DestinationInfo
+from app.services.destinations_service import destinations_service
 
 destinations_bp = Blueprint('destinations', __name__, url_prefix='/api')
 
@@ -41,47 +42,15 @@ def get_destinations():
     """
     try:
         data = request.get_json()
-        if not data:
-            return UnifiedResponse.bad_request("请求体不能为空")
+        departure = data.get('departure')
+        date = data.get('date')
 
-        required = ['departure', 'date']
-        for field in required:
-            if field not in data:
-                return UnifiedResponse.bad_request(f"缺少必填参数: {field}")
-
-        # TODO: 组员A提供数据，组员C实现真实查询
-        # 当前返回 Mock 数据
-        mock_destinations = [
-            DestinationInfo(
-                destination="PVG",
-                city="上海",
-                country="中国",
-                lowestPrice=800
-            ),
-            DestinationInfo(
-                destination="HKG",
-                city="香港",
-                country="中国",
-                lowestPrice=1200
-            ),
-            DestinationInfo(
-                destination="SIN",
-                city="新加坡",
-                country="新加坡",
-                lowestPrice=2500
-            ),
-            DestinationInfo(
-                destination="BKK",
-                city="曼谷",
-                country="泰国",
-                lowestPrice=1800
-            )
-        ]
+        # 调用数仓接口
+        results = destinations_service.get_lowest_price_destinations(departure, date)
 
         return UnifiedResponse.success({
-            "destinations": [d.to_dict() for d in mock_destinations],
-            "total": len(mock_destinations)
+            "destinations": results,
+            "total": len(results)
         })
-
     except Exception as e:
         return UnifiedResponse.error(f"服务器错误: {str(e)}")
