@@ -5,63 +5,18 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f762ef42-4659-4b92-81c8-3a17156ffc59" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/flight-search-system.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.venv/Scripts/libcrypto-3.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.venv/Scripts/libffi-8.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.venv/Scripts/libssl-3.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.venv/Scripts/pyexpat.pyd" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.venv/Scripts/python.exe" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.venv/Scripts/python3.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.venv/Scripts/python313.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.venv/Scripts/pythonw.exe" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.venv/Scripts/select.pyd" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.venv/Scripts/sqlite3.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.venv/Scripts/vcruntime140.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.venv/Scripts/vcruntime140_1.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.venv/pyvenv.cfg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/algorithm/models/.gitkeep" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/algorithm/netebooks/01_eda.ipynb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/algorithm/netebooks/02_price_prediction.ipynb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/algorithm/netebooks/03_recommendation.ipynb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/algorithm/netebooks/04_route_splicing.ipynb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/algorithm/src/_init_.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/algorithm/src/price_predictor.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/algorithm/src/recommend_engine.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/algorithm/src/route_splicer.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/.evn.example" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/app/_init_.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/app/api/_init_.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/app/api/predict.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/app/api/recommend.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/app/api/search.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/app/api/splice.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/app/config.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/app/main.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/app/models/_init_.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/app/models/flight.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/app/services/_init_.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/app/services/predict_service.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/app/services/recommend_service.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/app/services/search_service.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/app/services/splice_service.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/requirements.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/run.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data_engineering/hive/hive_ddl.sql" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data_engineering/logstash/logstash.conf" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data_engineering/scripts/clean_data.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data_engineering/scripts/feature_engineering.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data_engineering/scripts/spark_etl.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/api_spec.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/database_design.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/requirements.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/scripts/deploy.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/app/api/destination.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/app/models/request.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/app/models/response.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/flight-search-system.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/flight-search-system.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/app/api/_init_.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/api/_init_.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/app/api/predict.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/api/predict.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/app/api/recommend.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/api/recommend.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/app/api/search.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/api/search.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/app/api/splice.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/api/splice.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/app/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/app/models/flight.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/models/flight.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -94,7 +49,7 @@
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "master"
+    "git-widget-placeholder": "develop"
   }
 }]]></component>
   <component name="SharedIndexes">
