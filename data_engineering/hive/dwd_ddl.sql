@@ -162,7 +162,35 @@ COMMENT 'DWD层-机场频率明细'
 STORED AS PARQUET
 TBLPROPERTIES ('parquet.compression' = 'SNAPPY');
 
--- 8. 航线基础信息（不在 DWD 保存平均值等聚合指标）
+-- 8. 导航台明细（机场能力增强数据）
+CREATE TABLE IF NOT EXISTS dwd_navaid (
+    navaid_id BIGINT,
+    source_filename STRING,
+    ident STRING,
+    navaid_name STRING,
+    navaid_type STRING,
+    frequency_khz INT,
+    latitude_deg DOUBLE,
+    longitude_deg DOUBLE,
+    elevation_ft INT,
+    iso_country STRING,
+    dme_frequency_khz INT,
+    dme_channel STRING,
+    dme_latitude_deg DOUBLE,
+    dme_longitude_deg DOUBLE,
+    dme_elevation_ft INT,
+    slaved_variation_deg DOUBLE,
+    magnetic_variation_deg DOUBLE,
+    usage_type STRING,
+    power STRING,
+    associated_airport_ident STRING COMMENT '关联 dim_airport.ident，可为空',
+    etl_time TIMESTAMP
+)
+COMMENT 'DWD层-导航台明细'
+STORED AS PARQUET
+TBLPROPERTIES ('parquet.compression' = 'SNAPPY');
+
+-- 9. 航线基础信息（不在 DWD 保存平均值等聚合指标）
 CREATE TABLE IF NOT EXISTS dwd_route_info (
     route_id STRING COMMENT '市场起点与终点组成的稳定航线标识',
     market_origin STRING,
@@ -173,7 +201,7 @@ COMMENT 'DWD层-市场航线基础信息'
 STORED AS PARQUET
 TBLPROPERTIES ('parquet.compression' = 'SNAPPY');
 
--- 9. 拒绝记录
+-- 10. 拒绝记录
 CREATE TABLE IF NOT EXISTS dwd_itinerary_reject (
     source_file STRING,
     source_record_id STRING COMMENT '可追溯到原始记录的标识',
@@ -190,7 +218,7 @@ PARTITIONED BY (process_date DATE COMMENT '处理日期分区')
 STORED AS PARQUET
 TBLPROPERTIES ('parquet.compression' = 'SNAPPY');
 
--- 10. 数据质量检查结果
+-- 11. 数据质量检查结果
 CREATE TABLE IF NOT EXISTS dq_check_result (
     run_id STRING,
     job_name STRING,
