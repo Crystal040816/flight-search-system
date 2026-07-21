@@ -28,6 +28,10 @@ data/
 *.db
 *.sqlite3
 
+# 数据工程对外样本是正式交付物
+!data_engineering/sample/data_dictionary.csv
+!data_engineering/sample/dwd_sample.parquet
+
 # 日志
 *.log
 logs/
