@@ -174,3 +174,37 @@ WITH SERDEPROPERTIES (
 STORED AS TEXTFILE
 LOCATION '/user/hive/warehouse/flight_db/ods_regions'
 TBLPROPERTIES ("skip.header.line.count" = "1");
+
+-- 7. ODS 导航台
+CREATE EXTERNAL TABLE IF NOT EXISTS ods_navaids (
+    id STRING,
+    filename STRING,
+    ident STRING,
+    name STRING,
+    type STRING,
+    frequency_khz STRING,
+    latitude_deg STRING,
+    longitude_deg STRING,
+    elevation_ft STRING,
+    iso_country STRING,
+    dme_frequency_khz STRING,
+    dme_channel STRING,
+    dme_latitude_deg STRING,
+    dme_longitude_deg STRING,
+    dme_elevation_ft STRING,
+    slaved_variation_deg STRING,
+    magnetic_variation_deg STRING,
+    usageType STRING,
+    power STRING,
+    associated_airport STRING
+)
+COMMENT 'ODS层-原始导航台数据'
+ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
+WITH SERDEPROPERTIES (
+    "separatorChar" = ",",
+    "quoteChar" = "\"",
+    "escapeChar" = "\\"
+)
+STORED AS TEXTFILE
+LOCATION '/user/hive/warehouse/flight_db/ods_navaids'
+TBLPROPERTIES ("skip.header.line.count" = "1");

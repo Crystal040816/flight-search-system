@@ -1,0 +1,25 @@
+{
+  "format": "Apache Parquet",
+  "row_count": 50000,
+  "column_count": 18,
+  "fields": [
+    {"name": "quote_snapshot_id", "type": "string", "nullable": true},
+    {"name": "search_date", "type": "date32[day]", "nullable": true},
+    {"name": "flight_date", "type": "date32[day]", "nullable": true},
+    {"name": "days_to_departure", "type": "int32", "nullable": true},
+    {"name": "route_id", "type": "string", "nullable": false},
+    {"name": "market_origin", "type": "string", "nullable": true},
+    {"name": "market_destination", "type": "string", "nullable": true},
+    {"name": "first_airline_code", "type": "string", "nullable": true},
+    {"name": "travel_duration_minutes", "type": "int32", "nullable": true},
+    {"name": "elapsed_days", "type": "int32", "nullable": true},
+    {"name": "is_basic_economy", "type": "bool", "nullable": true},
+    {"name": "is_refundable", "type": "bool", "nullable": true},
+    {"name": "is_non_stop", "type": "bool", "nullable": true},
+    {"name": "seats_remaining", "type": "int32", "nullable": true},
+    {"name": "total_distance_miles", "type": "int32", "nullable": true},
+    {"name": "segment_count", "type": "int32", "nullable": true},
+    {"name": "stop_count", "type": "int32", "nullable": true},
+    {"name": "total_fare", "type": "decimal128(12, 2)", "nullable": true}
+  ]
+}

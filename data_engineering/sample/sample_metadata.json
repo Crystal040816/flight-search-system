@@ -1,0 +1,22 @@
+{
+  "dataset_name": "flight_price_dwd_algorithm_sample",
+  "data_layer": "DWD-derived feature sample",
+  "file": "dwd_sample.parquet",
+  "format": "Apache Parquet",
+  "compression": "Snappy",
+  "sample_rows": 50000,
+  "sample_method": "LIMIT 50000 from the 1,000,000-row DWD experiment sample",
+  "is_random_sample": false,
+  "source_ods_rows": 82138753,
+  "source_dwd_experiment_rows": 1000000,
+  "source_dwd_sample_method": "FIRST_N_ROWS",
+  "search_date_range": ["2022-04-19", "2022-04-19"],
+  "flight_date_range": ["2022-04-20", "2022-04-25"],
+  "limitations": [
+    "The local sample contains only one search date.",
+    "Daily volume trends and temporal generalization cannot be evaluated.",
+    "Results are suitable for development and demonstration, not production accuracy claims."
+  ],
+  "recommended_target": "total_fare",
+  "currency": "USD"
+}

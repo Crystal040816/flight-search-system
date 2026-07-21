@@ -1,0 +1,19 @@
+field_name,parquet_type,nullable,null_count,null_rate,model_role,description
+quote_snapshot_id,string,true,0,0.000000,identifier,报价快照稳定唯一标识；不可作为模型特征
+search_date,date32[day],true,0,0.000000,context,用户执行航班搜索的日期
+flight_date,date32[day],true,0,0.000000,context,行程计划出发日期
+days_to_departure,int32,true,0,0.000000,feature,出发日期减搜索日期的天数
+route_id,string,false,0,0.000000,feature,市场起点与终点组成的航线标识
+market_origin,string,true,0,0.000000,feature,搜索起点市场 IATA 代码
+market_destination,string,true,0,0.000000,feature,搜索终点市场 IATA 代码
+first_airline_code,string,true,0,0.000000,feature,第一航段航司代码
+travel_duration_minutes,int32,true,0,0.000000,feature,全程旅行时长（分钟）
+elapsed_days,int32,true,0,0.000000,feature,到达相对出发跨日数
+is_basic_economy,bool,true,0,0.000000,feature,是否基础经济舱
+is_refundable,bool,true,0,0.000000,feature,是否可退
+is_non_stop,bool,true,0,0.000000,feature,是否直飞
+seats_remaining,int32,true,0,0.000000,feature,报价时剩余座位数
+total_distance_miles,int32,true,2563,0.051260,feature_nullable,全程距离（英里）；允许缺失
+segment_count,int32,true,0,0.000000,feature,实际航段数量
+stop_count,int32,true,0,0.000000,feature,中转次数
+total_fare,"decimal128(12, 2)",true,0,0.000000,target,含税总价（USD）；作为标签时不得进入特征
