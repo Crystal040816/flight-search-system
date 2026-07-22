@@ -1,290 +1,209 @@
-import os
-import joblib
-import numpy as np
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+价格预测模型训练脚本
+使用 XGBoost 训练价格预测模型
+"""
 import pandas as pd
-from xgboost import XGBRegressor
-from sklearn.metrics import mean_absolute_error, mean_squared_error
-from pyspark.sql import SparkSession
-import pyspark.sql.functions as F
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+import xgboost as xgb
+import joblib
+import os
+import time
+import warnings
+
+warnings.filterwarnings('ignore')
+
+from data_loader import load_ods_data
 
 
 class PricePredictor:
-    """
-    集群版机票价格预测模型
-    基于最新数据字典修正：直接使用 Hive 表中的 days_to_departure 和 route_id
-    """
+    """价格预测器"""
 
     def __init__(self):
-        self.model = XGBRegressor()
-        self.feature_cols = []
-        self.label_col = "total_fare"
-        self.spark = self._init_spark()
+        self.model = None
+        self.encoders = {}
+        self.features = []
+        self.model_dir = "/home/hadoop/flight-search-system/algorithm/models"
 
-    def _init_spark(self, app_name="FlightPricePredictor"):
-        """初始化Spark会话"""
-        spark = SparkSession.builder \
-            .appName(app_name) \
-            .enableHiveSupport() \
-            .config("spark.sql.parquet.compression.codec", "snappy") \
-            .getOrCreate()
-        # 切换到业务数据库 (根据你的实际库名修改)
-        spark.sql("USE flight_db")
-        return spark
-
-    def load_from_hive(self, start_date="2022-04-18", end_date="2022-04-27"):
-        """从Hive dwd_flight_itinerary表读取数据"""
-        df = (self.spark.table("dwd_flight_itinerary")
-              .where(F.col("search_date").between(start_date, end_date))
-              .where(F.col("total_fare") > 0)
-              .limit(1000000)
-              .toPandas())
-
-        # 类型转换
-        df["total_fare"] = df["total_fare"].astype(float)
-        # total_distance_miles 允许为空，先转为 float 以便后续处理 NaN
-        df["total_distance_miles"] = pd.to_numeric(df["total_distance_miles"], errors='coerce')
-
-        # 确保日期列是 datetime 类型
-        df["search_date"] = pd.to_datetime(df["search_date"])
-        df["flight_date"] = pd.to_datetime(df["flight_date"])
-
-        print(f"[数据加载] 从Hive读取完成，共 {len(df)} 行样本")
-        return df
-
-    def build_features(self, df):
-        """特征工程：基于数据字典对齐 + 注入地理位置价格先验(Target Encoding)"""
+    def create_features(self, df):
+        """创建特征"""
         df = df.copy()
 
-        # 1. 时间衍生特征
-        df["departure_weekday"] = df["flight_date"].dt.dayofweek
-        df["departure_month"] = df["flight_date"].dt.month
-        df["search_weekday"] = df["search_date"].dt.dayofweek
+        # 日期特征
+        df['search_date'] = pd.to_datetime(df['searchdate'])
+        df['flight_date'] = pd.to_datetime(df['flightdate'])
+        df['days_to_departure'] = (df['flight_date'] - df['search_date']).dt.days
+        df['days_to_departure'] = df['days_to_departure'].clip(0, 365)
+        df['flight_month'] = df['flight_date'].dt.month
+        df['flight_dayofweek'] = df['flight_date'].dt.dayofweek
+        df['is_weekend'] = df['flight_dayofweek'].isin([5, 6]).astype(int)
+        df['is_summer'] = df['flight_month'].isin([6, 7, 8]).astype(int)
+        df['is_holiday'] = df['flight_month'].isin([7, 8, 12]).astype(int)
 
-        # 2. 缺失值处理：total_distance_miles (字典允许缺失)
-        df["distance_is_null"] = df["total_distance_miles"].isnull().astype(int)
-        if "route_id" in df.columns:
-            route_avg_dist = df.groupby("route_id")["total_distance_miles"].transform("mean")
-            df["total_distance_miles"] = df["total_distance_miles"].fillna(route_avg_dist)
-        df["total_distance_miles"] = df["total_distance_miles"].fillna(df["total_distance_miles"].mean())
+        # 航段特征
+        df['segment_count'] = df['segmentsairlinecode'].str.split('||').str.len()
+        df['stop_count'] = df['segment_count'] - 1
+        df['stop_count'] = df['stop_count'].clip(0, 3)
+        df['seatsremaining'] = pd.to_numeric(df['seatsremaining'], errors='coerce')
+        df['totalfare'] = pd.to_numeric(df['totalfare'], errors='coerce')
 
-        # 3. 布尔型特征转数值 (字典显示是 bool)
-        bool_cols = ["is_basic_economy", "is_refundable", "is_non_stop"]
-        for col in bool_cols:
-            if col in df.columns:
-                df[col] = df[col].astype(int)
+        # 距离特征
+        df['distance'] = pd.to_numeric(df['totaltraveldistance'], errors='coerce').fillna(500)
 
-        # 4. 高基类别特征频次编码 (辅助特征)
-        cat_cols = ["first_airline_code", "market_origin", "market_destination", "route_id"]
-        for col in cat_cols:
-            if col in df.columns:
-                freq_map = df[col].value_counts().to_dict()
-                df[f"{col}_freq"] = df[col].map(freq_map)
+        # 时长特征
+        def parse_duration(val):
+            if pd.isna(val):
+                return 0
+            parts = str(val).split('||')
+            total = 0
+            for p in parts:
+                try:
+                    total += int(p)
+                except:
+                    pass
+            return total / 3600
 
-        # 5. 【核心新增】Target Encoding：注入地理位置/航线的价格先验知识
-        global_avg_price = df["total_fare"].mean()
+        df['duration_hours'] = df['segmentsdurationinseconds'].apply(parse_duration)
 
-        # 出发地平均价格
-        if "market_origin" in df.columns:
-            origin_mean = df.groupby("market_origin")["total_fare"].mean()
-            df["origin_avg_price"] = df["market_origin"].map(origin_mean).fillna(global_avg_price)
+        # 交叉特征
+        df['price_per_stop'] = df['totalfare'] / (df['stop_count'] + 1)
+        df['duration_per_stop'] = df['duration_hours'] / (df['stop_count'] + 1)
+        df['price_per_hour'] = df['totalfare'] / (df['duration_hours'] + 0.1)
+        df['price_per_mile'] = df['totalfare'] / (df['distance'] + 0.1)
 
-        # 目的地平均价格
-        if "market_destination" in df.columns:
-            dest_mean = df.groupby("market_destination")["total_fare"].mean()
-            df["dest_avg_price"] = df["market_destination"].map(dest_mean).fillna(global_avg_price)
+        # 航司评分
+        airline_rank = {
+            'DL': 0.9, 'AA': 0.85, 'UA': 0.85, 'B6': 0.75,
+            'WN': 0.80, 'NK': 0.60, 'F9': 0.55, 'AS': 0.85
+        }
 
-        # 航线平均价格 (最强特征)
-        if "route_id" in df.columns:
-            route_mean = df.groupby("route_id")["total_fare"].mean()
-            df["route_avg_price"] = df["route_id"].map(route_mean).fillna(global_avg_price)
+        def get_airline_score(code):
+            if pd.isna(code):
+                return 0.5
+            first = str(code).split('||')[0] if '||' in str(code) else str(code)
+            return airline_rank.get(first, 0.5)
 
-        # 6. 定义最终入模特征列 (严格对齐数据字典)
-        self.feature_cols = [
-            # 时间/距离类 (字典字段)
-            "days_to_departure",
-            "travel_duration_minutes",
-            "elapsed_days",
-            "total_distance_miles",
-            "distance_is_null",
+        df['airline_score'] = df['segmentsairlinecode'].apply(get_airline_score)
 
-            # 布尔/计数类 (字典字段)
-            "is_basic_economy",
-            "is_refundable",
-            "is_non_stop",
-            "seats_remaining",
-            "segment_count",
-            "stop_count",
-
-            # 时间衍生
-            "departure_weekday",
-            "departure_month",
-            "search_weekday",
-
-            # 频次编码特征
-            "first_airline_code_freq",
-            "market_origin_freq",
-            "market_destination_freq",
-            "route_id_freq",
-
-            # Target Encoding 特征 (核心)
-            "origin_avg_price",
-            "dest_avg_price",
-            "route_avg_price"
-        ]
-
-        # 过滤掉不存在的列
-        existing_cols = [c for c in self.feature_cols if c in df.columns]
-        self.feature_cols = existing_cols
-
-        # 删除包含空特征的行
-        df = df.dropna(subset=self.feature_cols).reset_index(drop=True)
-
-        print(f"[特征工程] 完成，有效样本 {len(df)} 行，入模特征 {len(self.feature_cols)} 个")
         return df
 
-    def generate_lookup_table(self, df, save_path="route_lookup_table.csv"):
-        """
-        生成用于预测的查找表 (CSV)
-        将航线、出发地、目的地的统计信息合并到一个文件中，方便预测时查询
-        """
-        print("🏗️ 正在生成路线特征查找表...")
+    def train(self, df, test_size=0.2):
+        """训练模型"""
+        print("=" * 60)
+        print("价格预测模型训练")
+        print("=" * 60)
 
-        # 1. 航线维度统计 (Route Level) - 以 Origin + Dest 为 Key
-        route_stats = df.groupby(["market_origin", "market_destination"]).agg({
-            "total_fare": "mean",
-            "total_distance_miles": "mean",
-            "travel_duration_minutes": "mean",
-            "seats_remaining": "median",
-            "is_non_stop": "mean",
-            "segment_count": "mean",
-            "stop_count": "mean"
-        }).reset_index()
+        # 特征工程
+        print("\n[1/5] 特征工程...")
+        df = self.create_features(df)
 
-        route_stats.rename(columns={
-            "total_fare": "route_avg_price",
-            "total_distance_miles": "route_avg_dist",
-            "travel_duration_minutes": "route_avg_duration",
-            "seats_remaining": "route_median_seats",
-            "is_non_stop": "route_non_stop_prob",
-            "segment_count": "route_avg_segments",
-            "stop_count": "route_avg_stops"
-        }, inplace=True)
+        # 定义特征
+        self.features = [
+            'days_to_departure', 'flight_month', 'flight_dayofweek', 'is_weekend',
+            'is_summer', 'is_holiday', 'segment_count', 'stop_count',
+            'seatsremaining', 'distance', 'duration_hours', 'airline_score',
+            'price_per_stop', 'duration_per_stop', 'price_per_hour', 'price_per_mile'
+        ]
 
-        # 2. 出发地维度统计 (Origin Level)
-        origin_stats = df.groupby("market_origin")["total_fare"].mean().reset_index()
-        origin_stats.rename(columns={"total_fare": "origin_avg_price"}, inplace=True)
+        # 编码分类变量
+        categorical = ['startingairport', 'destinationairport']
+        for col in categorical:
+            le = LabelEncoder()
+            df[col + '_encoded'] = le.fit_transform(df[col].astype(str))
+            self.encoders[col] = le
+            self.features.append(col + '_encoded')
 
-        # 3. 目的地维度统计 (Dest Level)
-        dest_stats = df.groupby("market_destination")["total_fare"].mean().reset_index()
-        dest_stats.rename(columns={"total_fare": "dest_avg_price"}, inplace=True)
+        # 清理数据
+        df = df.dropna(subset=self.features + ['totalfare'])
+        df = df[df['totalfare'] > 0]
+        df = df[df['totalfare'] < 3000]
 
-        # 4. 合并所有统计信息到一个表
-        # 以航线表为基础，左连接出发地和目的地均价
-        final_lookup = route_stats.merge(origin_stats, on="market_origin", how="left") \
-            .merge(dest_stats, on="market_destination", how="left")
+        # IQR 去除异常值
+        Q1 = df['totalfare'].quantile(0.25)
+        Q3 = df['totalfare'].quantile(0.75)
+        IQR = Q3 - Q1
+        lower = Q1 - 1.5 * IQR
+        upper = Q3 + 1.5 * IQR
+        df = df[(df['totalfare'] >= lower) & (df['totalfare'] <= upper)]
 
-        # 填充可能的 NaN (例如新航线没有历史数据，用全局均价兜底)
-        global_avg = df["total_fare"].mean()
-        final_lookup["route_avg_price"] = final_lookup["route_avg_price"].fillna(global_avg)
-        final_lookup["origin_avg_price"] = final_lookup["origin_avg_price"].fillna(global_avg)
-        final_lookup["dest_avg_price"] = final_lookup["dest_avg_price"].fillna(global_avg)
+        print(f"✅ 清洗后数据: {len(df)} 条")
 
-        # 保存
-        final_lookup.to_csv(save_path, index=False)
-        print(f"✅ 查找表已生成: {save_path} (共 {len(final_lookup)} 条航线)")
-        return final_lookup
+        # 准备数据
+        print("\n[2/5] 准备训练数据...")
+        X = df[self.features]
+        y = df['totalfare']
 
-    def train(self, df):
-        """训练XGBoost回归模型"""
-        if not self.feature_cols:
-            df = self.build_features(df)
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=test_size, random_state=42
+        )
+        print(f"✅ 训练集: {len(X_train)} 条")
+        print(f"✅ 测试集: {len(X_test)} 条")
 
-        # 按时间顺序划分 (避免时间穿越)
-        df = df.sort_values("search_date").reset_index(drop=True)
-        split_idx = int(len(df) * 0.8)
-        train_mask = df.index < split_idx
-
-        X_train = df.loc[train_mask, self.feature_cols]
-        y_train = df.loc[train_mask, self.label_col]
-        X_val = df.loc[~train_mask, self.feature_cols]
-        y_val = df.loc[~train_mask, self.label_col]
-
-        # 模型训练
-        self.model = XGBRegressor(
+        # 训练模型
+        print("\n[3/5] 训练 XGBoost 模型...")
+        self.model = xgb.XGBRegressor(
             n_estimators=300,
-            max_depth=7,
-            learning_rate=0.08,
-            objective="reg:squarederror",
+            max_depth=8,
+            learning_rate=0.03,
+            subsample=0.8,
+            colsample_bytree=0.8,
+            min_child_weight=3,
             random_state=42,
-            early_stopping_rounds=30
+            verbosity=0,
+            n_jobs=-1
         )
-        self.model.fit(
-            X_train, y_train,
-            eval_set=[(X_val, y_val)],
-            verbose=50
-        )
+        self.model.fit(X_train, y_train)
 
         # 评估
-        y_pred = self.model.predict(X_val)
-        y_val_float = y_val.astype(float).values
+        print("\n[4/5] 评估模型...")
+        y_pred = self.model.predict(X_test)
+        mae = mean_absolute_error(y_test, y_pred)
+        rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+        r2 = r2_score(y_test, y_pred)
 
-        mae = mean_absolute_error(y_val_float, y_pred)
-        rmse = np.sqrt(mean_squared_error(y_val_float, y_pred))
-        epsilon = 1e-5
-        mape = np.mean(np.abs(y_val_float - y_pred) / (y_val_float + epsilon)) * 100
+        print(f"\n📊 模型评估结果:")
+        print(f"  MAE:  {mae:.2f} USD")
+        print(f"  RMSE: {rmse:.2f} USD")
+        print(f"  R²:   {r2:.4f}")
 
-        print("=" * 60)
-        print(f"[训练完成] 验证集 MAE:  {mae:.2f} USD")
-        print(f"[训练完成] 验证集 RMSE: {rmse:.2f} USD")
-        print(f"[训练完成] 验证集 MAPE: {mape:.2f} %")
-        print("=" * 60)
-        return {"mae": mae, "rmse": rmse, "mape": mape}
+        # 特征重要性
+        importance = pd.DataFrame({
+            'feature': self.features,
+            'importance': self.model.feature_importances_
+        }).sort_values('importance', ascending=False)
 
-    def save_model(self, save_path="../models/price_predictor.pkl"):
-        """保存模型"""
-        os.makedirs(os.path.dirname(save_path), exist_ok=True)
-        joblib.dump({
-            "model": self.model,
-            "feature_cols": self.feature_cols
-        }, save_path)
-        print(f"[模型保存] 已保存到: {os.path.abspath(save_path)}")
+        print(f"\n📊 特征重要性 Top 10:")
+        print(importance.head(10))
 
-    def stop(self):
-        self.spark.stop()
+        # 保存模型
+        print("\n[5/5] 保存模型...")
+        os.makedirs(self.model_dir, exist_ok=True)
+        joblib.dump(self.model, f"{self.model_dir}/price_predict_model.pkl")
+        joblib.dump(self.encoders, f"{self.model_dir}/encoders.pkl")
+        print(f"✅ 模型已保存到: {self.model_dir}")
+
+        return {'mae': mae, 'rmse': rmse, 'r2': r2}
+
+    def predict(self, features_dict):
+        """预测价格"""
+        if self.model is None:
+            print("模型未加载，请先训练")
+            return None
+        df = pd.DataFrame([features_dict])
+        return float(self.model.predict(df[self.features])[0])
 
 
 if __name__ == "__main__":
-    print("=" * 60)
-    print("=== 集群版机票价格预测模型 - 全流程训练 ===")
-    print("=" * 60)
+    # 加载数据
+    print("加载数据...")
+    df = load_ods_data(100000)
+    print(f"✅ 加载了 {len(df)} 条数据")
 
+    # 训练
     predictor = PricePredictor()
-    try:
-        # 1. 加载数据
-        print("\n>>> 步骤1：加载Hive数据")
-        raw_df = predictor.load_from_hive("2022-04-18", "2022-04-27")
-
-        # 2. 特征工程
-        print("\n>>> 步骤2：执行特征工程")
-        feature_df = predictor.build_features(raw_df)
-
-        # 3. 训练
-        print("\n>>> 步骤3：训练价格预测模型")
-        predictor.train(feature_df)
-
-        # 4. 保存模型
-        print("\n>>> 步骤4：保存模型文件")
-        predictor.save_model()
-
-        # 5. 生成查找表 (CSV) - 新增步骤
-        print("\n>>> 步骤5：生成预测用查找表 (CSV)")
-        predictor.generate_lookup_table(raw_df, save_path="route_lookup_table.csv")
-
-        print("\n✅ 全流程执行成功！")
-    except Exception as e:
-        print(f"\n❌ 执行失败：{str(e)}")
-        import traceback
-
-        traceback.print_exc()
-    finally:
-        predictor.stop()
+    results = predictor.train(df)
+    print("\n🎉 训练完成！")
