@@ -86,7 +86,7 @@ def predict_price():
         #     "departure": data.get('departure', 'PEK'),
         #     "destination": data.get('destination', 'PVG'),
         #     "flightDate": data.get('flightDate'),
-        #     "predictedPrice": 850,
+        #     "predictedPrice": qq850,
         #     "currency": "CNY",
         #     "confidence_lower": 780,
         #     "confidence_upper": 920,

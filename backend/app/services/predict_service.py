@@ -101,4 +101,6 @@ class PricePredictService:
 
 
 # 实例化
-predict_service = PricePredictService()
+price_predict_service = PricePredictService()
+
+

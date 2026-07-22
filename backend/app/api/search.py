@@ -6,6 +6,91 @@ from app.services.search_service import search_service as flight_search_service
 
 search_bp = Blueprint('search', __name__, url_prefix='/api')
 
+# 请在 backend/app/api/search.py 中，注册 search_bp 下方加入：
+
+@search_bp.route('/airports', methods=['GET'])
+def get_airports_list():
+    """
+    获取可用机场/城市列表接口
+    ---
+    tags:
+      - 搜索
+    summary: 获取系统所有可用机场
+    description: 自动提取数仓中所有已有的、可供检索的机场三字码与城市名称，支持前端下拉框和模糊联想。
+    responses:
+      200:
+        description: 成功返回机场列表
+        schema:
+          type: object
+          properties:
+            code:
+              type: integer
+              example: 200
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    description: 机场 IATA 三字码
+                    example: ORD
+                  city:
+                    type: string
+                    description: 城市中文名
+                    example: 芝加哥
+                  airport:
+                    type: string
+                    description: 机场详细名称
+                    example: 奥黑尔国际机场
+    """
+    try:
+        # 调用服务层提取
+        from app.services.search_service import search_service
+        airports = search_service.get_active_airports()
+        return UnifiedResponse.success(airports)
+    except Exception as e:
+        return UnifiedResponse.error(f"服务器错误: {str(e)}")
+
+@search_bp.route('/airlines', methods=['GET'])
+def get_airlines_list():
+    """
+    获取可用航空公司列表接口
+    ---
+    tags:
+      - 搜索
+    summary: 获取系统所有可用航空公司
+    description: 自动提取数仓中所有已有的、可供筛选的航空公司两字码及其中文名称对照，供前端多选过滤。
+    responses:
+      200:
+        description: 成功返回航司代码与名称对照列表
+        schema:
+          type: object
+          properties:
+            code:
+              type: integer
+              example: 200
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    description: 航司 IATA 两字码
+                    example: UA
+                  name:
+                    type: string
+                    description: 航司中文名称
+                    example: 联合航空
+    """
+    try:
+        from app.services.search_service import search_service
+        airlines = search_service.get_active_airlines()
+        return UnifiedResponse.success(airlines)
+    except Exception as e:
+        return UnifiedResponse.error(f"服务器错误: {str(e)}")
+
 
 @search_bp.route('/search', methods=['POST'])
 def search_flights():

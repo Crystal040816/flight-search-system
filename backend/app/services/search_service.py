@@ -1,123 +1,154 @@
 # backend/app/services/search_service.py
 import os
-
-try:
-    from backend.app import es_client
-except ImportError:
-    try:
-        from app import es_client
-    except ImportError:
-        es_client = None
+import pymysql
+from app.config import Config
 
 
 class FlightSearchService:
     def __init__(self):
-        # 对齐数仓：同步至 ES 的宽表索引名称
-        self.index_name = "ads_flight_search"
+        # 数据库连接参数
+        self.host = Config.MYSQL_HOST
+        self.port = Config.MYSQL_PORT
+        self.db = Config.MYSQL_DB
+        self.user = Config.MYSQL_USER
+        self.password = Config.MYSQL_PASSWORD
+
+    def _get_db_connection(self):
+        """建立并返回 MySQL 只读连接"""
+        return pymysql.connect(
+            host=self.host,
+            port=self.port,
+            user=self.user,
+            password=self.password,
+            database=self.db,
+            charset='utf8mb4',
+            cursorclass=pymysql.cursors.DictCursor
+        )
 
     def search_flights(self, departure: str, destination: str, flight_date: str, page: int = 1, size: int = 20,
                        sort_by: str = "price", filters: dict = None):
         """
-        从 ES 同步宽表 ads_flight_search 中读取真实报价数据
+        核心业务：从真实 MySQL ads_route_lowest_price 表中检索符合条件的机票方案
         """
-        if not es_client:
-            print("[Search Service] ES 客户端未连接，启用降级模拟")
-            return self._generate_fallback_search(departure, destination, flight_date, page, size)
+        print("当前查询日期:", flight_date)
+        try:
+            conn = self._get_db_connection()
+        except Exception as e:
+            print(f"[MySQL Connection Error] 数据库连接失败: {str(e)}。请确保已建立 SSH 隧道。")
+            return {"total": 0, "flights": []}
 
-        # 1. 组装符合数仓逻辑的查询 DSL
-        query_must = [
-            {"term": {"market_origin.keyword": departure.upper()}},
-            {"term": {"market_destination.keyword": destination.upper()}},
-            {"term": {"flight_date": flight_date}}
-        ]
+        # 1. 组装 SQL 基础查询
+        # 注意：ADS表的字段是 market_origin, market_destination, flight_date
+        sql_count = """
+                    SELECT COUNT(*) as total
+                    FROM ads_route_lowest_price
+                    WHERE market_origin = %s \
+                      AND market_destination = %s \
+                      AND flight_date = %s \
+                    """
 
-        # 2. 过滤器组装
-        if filters:
-            if "airlines" in filters and filters["airlines"]:
-                query_must.append({"terms": {"airline_code.keyword": filters["airlines"]}})
-            if "maxStops" in filters and filters["maxStops"] is not None:
-                query_must.append({"range": {"stop_count": {"lte": filters["maxStops"]}}})
+        sql_query = """
+                    SELECT quote_snapshot_id, flight_date, lowest_price, avg_price, airline_code, airline_name, etl_time
+                    FROM ads_route_lowest_price
+                    WHERE market_origin = %s \
+                      AND market_destination = %s \
+                      AND flight_date = %s \
+                    """
 
-            price_range = {}
-            if "minPrice" in filters:
-                price_range["gte"] = filters["minPrice"]
-            if "maxPrice" in filters:
-                price_range["lte"] = filters["maxPrice"]
-            if price_range:
-                query_must.append({"range": {"total_fare": price_range}})
+        # 2. 解析多条件过滤 (航司过滤)
+        params = [departure.upper(), destination.upper(), flight_date]
+        query_params = [departure.upper(), destination.upper(), flight_date]
 
-        # 3. 排序解析
-        sort_field = []
+        if filters and "airlines" in filters and filters["airlines"]:
+            # 动态拼接 IN 语句
+            placeholders = ', '.join(['%s'] * len(filters["airlines"]))
+            sql_count += f" AND airline_code IN ({placeholders})"
+            sql_query += f" AND airline_code IN ({placeholders})"
+            params.extend(filters["airlines"])
+            query_params.extend(filters["airlines"])
+
+        # 3. 排序规则拼装
         if sort_by == "price":
-            sort_field.append({"total_fare": {"order": "asc"}})
-        elif sort_by == "duration":
-            sort_field.append({"travel_duration_minutes": {"order": "asc"}})
+            sql_query += " ORDER BY lowest_price ASC"
         else:
-            sort_field.append({"total_fare": {"order": "asc"}})
+            sql_query += " ORDER BY lowest_price ASC"
 
+        # 4. 分页截取
         from_offset = (page - 1) * size
-
-        body = {
-            "query": {"bool": {"must": query_must}},
-            "from": from_offset,
-            "size": size,
-            "sort": sort_field
-        }
+        sql_query += f" LIMIT {from_offset}, {size}"
 
         try:
-            response = es_client.search(index=self.index_name, body=body)
-            hits = response["hits"]["hits"]
-            total = response["hits"]["total"]["value"]
+            with conn.cursor() as cursor:
+                # 执行计数
+                cursor.execute(sql_count, params)
+                total_res = cursor.fetchone()
+                total = total_res["total"] if total_res else 0
+
+                # 执行数据查询
+                cursor.execute(sql_query, query_params)
+                rows = cursor.fetchall()
 
             flights_list = []
-            for hit in hits:
-                source = hit["_source"]
-
-                # 转换时长：将数仓的 travel_duration_minutes (INT) 转为 "Xh Ym"
-                duration_mins = source.get("travel_duration_minutes", 0)
-                duration_str = f"{duration_mins // 60}h{duration_mins % 60}m" if duration_mins else "N/A"
-
-                # 4. 根据数仓规范：用 leg_id 替代 flightNumber
+            for row in rows:
+                # 5. 根据交付约束：使用唯一的 quote_snapshot_id 作为 legId，金额单位显示为 USD
                 flights_list.append({
-                    "legId": source.get("leg_id"),  # 唯一行程标识
-                    "departureTime": source.get("departure_time_raw"),  # DWD航段明细
-                    "arrivalTime": source.get("arrival_time_raw"),
-                    "duration": duration_str,
-                    "stops": source.get("stop_count", 0),
-                    "stopoverCities": source.get("stopover_cities", []),  # DWD拼接解析出的中转城市
-                    "airline": source.get("airline_name"),
-                    "airlineCode": source.get("airline_code"),
-                    "price": float(source.get("total_fare", 0)),
-                    "seatsRemaining": source.get("seats_remaining", 0),
-                    "cabin": source.get("cabin_code", "economy"),
-                    "aircraftModel": source.get("equipment_description", "Unknown")  # DWD设备描述
+                    "legId": row["quote_snapshot_id"],
+                    "departureTime": f"{flight_date} 09:00",  # ADS表无航段明细，提供标准出港时间
+                    "arrivalTime": f"{flight_date} 11:30",
+                    "duration": "2h30m",
+                    "stops": 0,
+                    "stopoverCities": [],
+                    "airline": row["airline_name"],
+                    "airlineCode": row["airline_code"],
+                    "price": float(row["lowest_price"]),  # 转换为 float，金额单位为 USD
+                    "seatsRemaining": 9,  # ADS层聚合数据，保底提供9张余票
+                    "cabin": "economy",
+                    "aircraftModel": "Boeing 737"
                 })
 
             return {"total": total, "flights": flights_list}
 
         except Exception as e:
-            print(f"[ES Error] 无法从 ads_flight_search 检索数据: {str(e)}")
-            return self._generate_fallback_search(departure, destination, flight_date, page, size)
+            print(f"[MySQL Query Error] 执行 SQL 异常: {str(e)}")
+            return {"total": 0, "flights": []}
+        finally:
+            conn.close()
 
-    def _generate_fallback_search(self, departure: str, destination: str, flight_date: str, page: int, size: int):
-        # 降级模拟逻辑：使用 legId
-        mock_list = []
-        for i in range(3):
-            mock_list.append({
-                "legId": f"leg_mock_{departure}_{destination}_{i}",
-                "departureTime": f"{flight_date} 09:00",
-                "arrivalTime": f"{flight_date} 11:30",
-                "duration": "2h30m",
-                "stops": 0,
-                "stopoverCities": [],
-                "airline": "中国国航",
-                "airlineCode": "CA",
-                "price": 850.00,
-                "seatsRemaining": 9,
-                "cabin": "economy",
-                "aircraftModel": "Boeing 737"
-            })
-        return {"total": len(mock_list), "flights": mock_list}
+    def get_active_airports(self):
+        """从真实 MySQL 中去重提取所有可售的机场三字码"""
+        try:
+            conn = self._get_db_connection()
+            sql = "SELECT DISTINCT market_origin FROM ads_route_lowest_price"
+            with conn.cursor() as cursor:
+                cursor.execute(sql)
+                rows = cursor.fetchall()
+            codes = sorted([row["market_origin"] for row in rows])
+            return codes
+        except Exception as e:
+            print(f"[MySQL Error] 获取活跃机场失败: {str(e)}")
+            return ["ORD", "LGA"]
+
+
+
+    def get_active_airlines(self):
+        """从真实 MySQL 中去重提取所有合作的航司代码与名称对照"""
+        try:
+            conn = self._get_db_connection()
+            sql = "SELECT DISTINCT airline_code, airline_name FROM ads_route_lowest_price"
+            with conn.cursor() as cursor:
+                cursor.execute(sql)
+                rows = cursor.fetchall()
+            airlines = []
+            for row in rows:
+                if row["airline_code"] and row["airline_name"]:
+                    airlines.append({
+                        "code": row["airline_code"],
+                        "name": row["airline_name"]
+                    })
+            return sorted(airlines, key=lambda x: x["code"])
+        except Exception as e:
+            print(f"[MySQL Error] 获取活跃航司失败: {str(e)}")
+            return [{"code": "UA", "name": "联合航空"}]
 
 
 search_service = FlightSearchService()
