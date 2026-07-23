@@ -28,8 +28,11 @@ CSV 原始文件
 | [DWD 数据字典](dwd_data_dictionary.md) | 算法、数据工程成员 | 明细粒度、关联键、样本范围和字段口径 |
 | [DWS 数据字典](dws_data_dictionary.md) | 算法、分析成员 | 日度汇总指标及统计口径 |
 | [ADS 数据字典](ads_data_dictionary.md) | 后端、Superset、展示成员 | MySQL 表、主键、指标语义和查询示例 |
-| [DWD HDFS 读取说明](../hive/dwd_hdfs_access.md) | 算法成员 | Spark/Hive/HDFS 读取方式 |
-| [质量检查与 Hive 质量表说明](../hive/dq_check_result_guide.md) | 全体成员 | DWD/DWS/ADS 验收结果和质量门禁 |
+| [DWD HDFS 读取说明](../data_engineering/hive/dwd_hdfs_access.md) | 算法成员 | Spark/Hive/HDFS 读取方式 |
+| [质量检查与 Hive 质量表说明](../data_engineering/hive/dq_check_result_guide.md) | 全体成员 | DWD/DWS/ADS 验收结果和质量门禁 |
+| [手工运维与流水线运行手册](manual_pipeline_runbook.md) | 数据工程、运维成员 | 服务检查、启停顺序、只读验收和受控重跑 |
+| [从节点安全关闭与恢复手册](worker_shutdown_runbook.md) | 集群维护成员 | node1-4 单机或整组关机、验证和恢复步骤 |
+| [最终数据验收报告](final_acceptance_report.md) | 全体成员、答辩评审 | 最终规模、质量结论、样本边界和交付状态 |
 
 DDL 是最终结构依据：
 
@@ -38,6 +41,8 @@ DDL 是最终结构依据：
 - DWS：`data_engineering/hive/dws_ddl.sql`
 - ADS 逻辑结构：`data_engineering/hive/ads_ddl.sql`
 - ADS MySQL 结构：`data_engineering/mysql/ads_ddl.sql`
+- ADS 2026-07-22 升级：`data_engineering/mysql/ads_schema_upgrade_20260722.sql`
+- ADS 发布后质量检查：`data_engineering/mysql/ads_quality_checks.sql`
 
 ## 3. 当前数据批次
 
@@ -52,6 +57,7 @@ DDL 是最终结构依据：
 | DWS 机场日统计 | 96 |
 | DWS 航线画像 | 234 |
 | ADS 最低价 | 26,562 |
+| ADS 舱型最低价 | 29,587 |
 | ADS 航线排行 | 1,246 |
 | ADS 航司报价占比 | 71 |
 
@@ -71,14 +77,15 @@ DDL 是最终结构依据：
 
 非数据工程成员原则上只获得读取权限。不要直接删除、移动或覆盖 Hive/HDFS 表目录，也不要绕过 ETL 修改 DWD/DWS。ADS 账号应按用途创建只读用户，不共享写入账号或密码文件。
 
-## 5. Airflow 与现有数据的关系
+## 5. 当前冻结状态与变更规则
 
-Airflow 只负责按依赖顺序调用已经验证的 Spark ETL 和校验命令。当前项目 DAG 为 `flight_sample_batch_pipeline`，保持暂停且 `schedule=None`，不会自动重跑或修改现有数据。
+当前 DWD、DWS 和 2026-07-22 ADS 发布批次已经验收并冻结。ADS 共 4 张 MySQL 服务表，其中最低价表 26,562 行、舱型最低价表 29,587 行。项目不依赖调度平台运行，正式处理逻辑保存在 `data_engineering/scripts/`，需要时由数据工程成员按运行手册手工执行。
 
-只有在以下动作同时发生时，Airflow 才会执行项目 ETL：
+在没有明确变更需求和备份的情况下，不得重新执行带写入行为的 ETL。重新处理时必须：
 
-1. Airflow 调度服务正在运行；
-2. 项目 DAG 被解除暂停；
-3. 用户手动触发该 DAG。
-
-清理 Airflow 官方示例 DAG 的元数据不会删除 Hive、HDFS、MySQL 数据，也不会影响项目源代码。
+1. 记录数据来源、参数、操作者和新 `run_id`；
+2. 先执行只读检查或 `--dry-run`；
+3. 确认 HDFS、Hive 和 MySQL 备份或回退路径；
+4. 按 ODS/DWD、DWS、ADS 顺序执行；
+5. 写入完成后重新运行对应层质量检查；
+6. 更新最终验收报告，禁止用旧批次结果证明新数据有效。

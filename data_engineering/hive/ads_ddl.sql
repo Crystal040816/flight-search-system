@@ -1,13 +1,12 @@
--- ============================================================
--- ADS 层：面向应用的报价与供给指标
--- 注意：所有排名和份额均基于搜索报价快照，不代表销量或客流。
--- ============================================================
+-- Logical ADS schemas. The production serving tables are stored in MySQL.
 
 USE flight_db;
 
--- 1. 指定搜索日、出发日和市场航线的最低报价
 CREATE TABLE IF NOT EXISTS ads_route_lowest_price (
     market_origin STRING,
+    origin_city STRING,
+    origin_country_code STRING,
+    origin_country_name STRING,
     market_destination STRING,
     destination_city STRING,
     destination_country_code STRING,
@@ -15,18 +14,51 @@ CREATE TABLE IF NOT EXISTS ads_route_lowest_price (
     flight_date DATE,
     lowest_price DECIMAL(12,2),
     avg_price DECIMAL(12,2),
-    quote_snapshot_id STRING COMMENT '最低价对应的报价快照',
+    quote_snapshot_id STRING,
     airline_code STRING,
     airline_name STRING,
+    seats_remaining INT,
+    cabin_type STRING COMMENT 'Single cabin code, mixed, or unknown',
+    cabin_summary STRING COMMENT 'Segment cabin sequence separated by ||',
+    is_mixed_cabin BOOLEAN,
+    equipment_summary STRING COMMENT 'Segment equipment sequence separated by ||',
     currency STRING,
     etl_time TIMESTAMP
 )
-COMMENT 'ADS层-市场航线最低报价'
-PARTITIONED BY (search_date DATE COMMENT '搜索日期分区')
+COMMENT 'Lowest itinerary offer for each route and flight date'
+PARTITIONED BY (search_date DATE)
 STORED AS PARQUET
 TBLPROPERTIES ('parquet.compression' = 'SNAPPY');
 
--- 2. 航线报价供给排行
+CREATE TABLE IF NOT EXISTS ads_route_cabin_lowest_price (
+    market_origin STRING,
+    origin_city STRING,
+    origin_country_code STRING,
+    origin_country_name STRING,
+    market_destination STRING,
+    destination_city STRING,
+    destination_country_code STRING,
+    destination_country_name STRING,
+    flight_date DATE,
+    cabin_type STRING COMMENT 'Single cabin code, mixed, or unknown',
+    cabin_summary STRING,
+    is_mixed_cabin BOOLEAN,
+    lowest_price DECIMAL(12,2),
+    avg_price DECIMAL(12,2),
+    offer_count BIGINT,
+    quote_snapshot_id STRING,
+    airline_code STRING,
+    airline_name STRING,
+    seats_remaining INT,
+    equipment_summary STRING,
+    currency STRING,
+    etl_time TIMESTAMP
+)
+COMMENT 'Lowest itinerary offer grouped by route, flight date, and cabin type'
+PARTITIONED BY (search_date DATE)
+STORED AS PARQUET
+TBLPROPERTIES ('parquet.compression' = 'SNAPPY');
+
 CREATE TABLE IF NOT EXISTS ads_route_offer_rank (
     rank_num INT,
     route_id STRING,
@@ -36,15 +68,14 @@ CREATE TABLE IF NOT EXISTS ads_route_offer_rank (
     distinct_leg_count BIGINT,
     avg_price DECIMAL(12,2),
     previous_day_avg_price DECIMAL(12,2),
-    price_change_pct DECIMAL(9,4) COMMENT '相对前一搜索日平均价的变化百分比',
+    price_change_pct DECIMAL(9,4),
     etl_time TIMESTAMP
 )
-COMMENT 'ADS层-航线报价供给排行，不代表真实客流热度'
-PARTITIONED BY (search_date DATE COMMENT '搜索日期分区')
+COMMENT 'Route offer-volume ranking; it is not passenger demand or sales'
+PARTITIONED BY (search_date DATE)
 STORED AS PARQUET
 TBLPROPERTIES ('parquet.compression' = 'SNAPPY');
 
--- 3. 航司报价供给占比
 CREATE TABLE IF NOT EXISTS ads_airline_offer_share (
     airline_code STRING,
     airline_name STRING,
@@ -53,7 +84,7 @@ CREATE TABLE IF NOT EXISTS ads_airline_offer_share (
     avg_price DECIMAL(12,2),
     etl_time TIMESTAMP
 )
-COMMENT 'ADS层-航司报价供给占比，不代表销售市场份额'
-PARTITIONED BY (search_date DATE COMMENT '搜索日期分区')
+COMMENT 'Airline quote share; it is not sales market share'
+PARTITIONED BY (search_date DATE)
 STORED AS PARQUET
 TBLPROPERTIES ('parquet.compression' = 'SNAPPY');

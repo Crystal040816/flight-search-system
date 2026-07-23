@@ -132,7 +132,7 @@ dws_airport_stats:        96
 dws_route_profile:       234
 ```
 
-### 5.3 ADS 验收
+### 5.3 ADS 基线验收
 
 ```text
 run_id:   ads_sample_20260721_1142
@@ -152,6 +152,26 @@ target:   MySQL flight_ads
 
 ADS 业务结果存放在 MySQL `flight_ads` 数据库；ADS 质量摘要仍写入 Hive
 `flight_db.dq_check_result`，以便统一判断整个数据链路。
+
+### 5.4 ADS 2026-07-22 扩展发布验收
+
+本次扩展增加出发地维度、剩余座位、舱型与机型，并新增
+`ads_route_cabin_lowest_price`。发布后使用
+`data_engineering/mysql/ads_quality_checks.sql` 直接检查 MySQL 实表：
+
+| 指标 | 结果 | 主要指标 |
+| --- | --- | --- |
+| `01_lowest_price_rows` | PASS | 26,562 行 |
+| `02_cabin_lowest_price_rows` | PASS | 29,587 行 |
+| `03_invalid_price_or_seats` | PASS | 失败数 0 |
+| `04_missing_origin_dimensions` | PASS | 失败数 0 |
+| `05_missing_destination_dimensions` | PASS | 失败数 0 |
+| `06_invalid_cabin_metrics` | PASS | 失败数 0 |
+| `07_duplicate_cabin_grain` | PASS | 失败数 0 |
+| `08_lowest_quote_missing_from_cabin_table` | PASS | 失败数 0 |
+
+这 8 项是 2026-07-22 的 MySQL 发布后验收结果，不属于
+`ads_sample_20260721_1142`，也没有修改 Hive 中已有的 7 项 ADS 基线记录。
 
 ## 6. 常用查询
 
@@ -259,6 +279,10 @@ if any(
 /tmp/ads-etl-mysql-write.log
 /tmp/ads-dq-result-write.log
 ```
+
+2026-07-22 的 ADS 发布采用 HDFS 暂存后本地写入 MySQL，运行日志默认保存在
+`/home/hadoop/flight_project/`。日志仅用于排障，最终结论以 MySQL 质量检查输出和
+`docs/final_acceptance_report.md` 为准。
 
 `/tmp` 可能在重启或系统清理后被删除，不能作为唯一验收依据。正式状态以
 Hive `dq_check_result` 中的批次记录为准。需要归档日志时，应复制到：

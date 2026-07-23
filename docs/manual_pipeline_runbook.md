@@ -98,6 +98,9 @@ mysql --defaults-extra-file="$HOME/.flight_ads_writer.cnf" --table -e "
 SELECT 'ads_route_lowest_price' AS table_name, COUNT(*) AS row_count
 FROM ads_route_lowest_price
 UNION ALL
+SELECT 'ads_route_cabin_lowest_price', COUNT(*)
+FROM ads_route_cabin_lowest_price
+UNION ALL
 SELECT 'ads_route_offer_rank', COUNT(*) FROM ads_route_offer_rank
 UNION ALL
 SELECT 'ads_airline_offer_share', COUNT(*) FROM ads_airline_offer_share;
@@ -128,6 +131,58 @@ spark_etl.py -> itinerary_etl.py -> dws_etl.py -> ads_etl.py
 
 当前正式批次不需要重跑。完整参数以各脚本的 `--help` 和版本库中的源代码为准。
 
+### ADS 2026-07-22 结构升级
+
+本次 ADS 扩展不修改 ODS、DWD 或 DWS。首次发布前，先备份 MySQL `flight_ads`，再执行一次：
+
+```bash
+mysql --defaults-extra-file="$HOME/.flight_ads_writer.cnf" \
+  < /home/hadoop/flight_project/staging_ads_20260722/ads_schema_upgrade_20260722.sql
+```
+
+随后先运行更新后 `ads_etl.py --dry-run`。验证通过且获得写入确认后，才允许正式覆盖 ADS，并执行 `data_engineering/mysql/ads_quality_checks.sql`。升级脚本不能重复执行。
+
+MySQL 仅监听 `node-master` 的 `127.0.0.1` 时，YARN executor 不能直接使用 JDBC 写入。ADS 发布应拆成两个阶段：先使用 `--stage-output` 在 YARN 上将四张 ADS 结果暂存到 HDFS，再在 `node-master` 使用本地 Spark 和 `--publish-staged` 写入 MySQL。不要为此把 MySQL 暴露到集群网络。
+
+推荐命令形态：
+
+```bash
+STAGE_PATH="hdfs:///tmp/flight_ads_release_YYYYMMDD"
+
+spark-submit \
+  --master yarn \
+  --deploy-mode client \
+  --conf spark.network.timeout=600s \
+  --conf spark.executor.heartbeatInterval=60s \
+  /home/hadoop/flight_project/ads_etl.py \
+  --database flight_db \
+  --stage-output "$STAGE_PATH"
+
+spark-submit \
+  --master 'local[1]' \
+  --driver-memory 512m \
+  --conf spark.sql.shuffle.partitions=2 \
+  /home/hadoop/flight_project/ads_etl.py \
+  --mysql-config "$HOME/.flight_ads_writer.cnf" \
+  --publish-staged "$STAGE_PATH"
+```
+
+第一阶段日志必须出现 `action=staged`，第二阶段必须出现 `action=written target=mysql source=staged`。仅在 MySQL 质量检查通过且备份有效后，才能删除对应 HDFS 暂存目录。
+
+发布后使用以下查询核对四张 ADS 表：
+
+```sql
+SELECT 'ads_route_lowest_price' AS table_name, COUNT(*) AS row_count
+FROM ads_route_lowest_price
+UNION ALL
+SELECT 'ads_route_cabin_lowest_price', COUNT(*)
+FROM ads_route_cabin_lowest_price
+UNION ALL
+SELECT 'ads_route_offer_rank', COUNT(*) FROM ads_route_offer_rank
+UNION ALL
+SELECT 'ads_airline_offer_share', COUNT(*) FROM ads_airline_offer_share;
+```
+
 ## 8. 常见故障边界
 
 - DataNode 或 NodeManager 数量不足时，只恢复缺失节点，不重建 HDFS。
@@ -135,3 +190,4 @@ spark_etl.py -> itinerary_etl.py -> dws_etl.py -> ads_etl.py
 - Hive 表结构以 Metastore 和对应 DDL 为准，不直接移动 HDFS 表目录。
 - MySQL 只读用户仅供后端和展示使用，写入账号配置保存在节点本地并设置 `600` 权限。
 - `/tmp` 日志不是正式验收依据，最终状态以 `dq_check_result` 和验收报告为准。
+- ADS 的 2026-07-22 扩展验收由 `data_engineering/mysql/ads_quality_checks.sql` 对 MySQL 实表执行；它不覆盖 Hive 中 2026-07-21 的基线 `run_id`。
