@@ -64,8 +64,8 @@ class RecommendService:
             try:
                 # 1. 检索候选集 (传入默认 searchDate=2022-04-19 确保数仓对齐)
                 candidate_data = search_service.search_flights(
-                    departure=departure,
-                    destination=destination,
+                    departure_city=departure,
+                    destination_city=destination,
                     flight_date=flight_date,
                     search_date="2022-04-19",  # 显式对齐默认分区日
                     page=1,

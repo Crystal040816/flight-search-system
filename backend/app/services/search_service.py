@@ -34,7 +34,7 @@ class FlightSearchService:
             # 纯数仓驱动：直接去重读取物理列 origin_city
             sql = """
                   SELECT DISTINCT origin_city as city_name
-                  FROM ads_route_lowest_price
+                  FROM ads_route_cabin_lowest_price
                   WHERE origin_city IS NOT NULL \
                     AND origin_city != '' \
                   """
@@ -55,7 +55,7 @@ class FlightSearchService:
             # 纯数仓驱动：直接去重读取物理列 destination_city
             sql = """
                   SELECT DISTINCT destination_city as city_name
-                  FROM ads_route_lowest_price
+                  FROM ads_route_cabin_lowest_price
                   WHERE destination_city IS NOT NULL \
                     AND destination_city != '' \
                   """
@@ -73,7 +73,7 @@ class FlightSearchService:
     def get_active_flight_dates(self):
         try:
             conn = self._get_db_connection()
-            sql = "SELECT DISTINCT flight_date FROM ads_route_lowest_price ORDER BY flight_date ASC"
+            sql = "SELECT DISTINCT flight_date FROM ads_route_cabin_lowest_price ORDER BY flight_date ASC"
             with conn.cursor() as cursor:
                 cursor.execute(sql)
                 rows = cursor.fetchall()
@@ -91,7 +91,7 @@ class FlightSearchService:
             conn = self._get_db_connection()
             sql = """
                   SELECT DISTINCT cabin_type as cabin
-                  FROM ads_route_lowest_price
+                  FROM ads_route_cabin_lowest_price
                   WHERE cabin_type IS NOT NULL \
                     AND cabin_type != '' \
                   """
@@ -114,12 +114,12 @@ class FlightSearchService:
                 # 纯数仓物理列关联：直接通过 origin_city 检索对应的出发机场代码
                 sql = """
                       SELECT DISTINCT market_origin as airport_code
-                      FROM ads_route_lowest_price
+                      FROM ads_route_cabin_lowest_price
                       WHERE origin_city = %s \
                       """
                 params = [city_filter]
             else:
-                sql = "SELECT DISTINCT market_origin as airport_code FROM ads_route_lowest_price"
+                sql = "SELECT DISTINCT market_origin as airport_code FROM ads_route_cabin_lowest_price"
                 params = []
             with conn.cursor() as cursor:
                 cursor.execute(sql, params)
@@ -140,12 +140,12 @@ class FlightSearchService:
                 # 纯数仓物理列关联：直接通过 destination_city 检索对应的降落机场代码
                 sql = """
                       SELECT DISTINCT market_destination as airport_code
-                      FROM ads_route_lowest_price
+                      FROM ads_route_cabin_lowest_price
                       WHERE destination_city = %s \
                       """
                 params = [city_filter]
             else:
-                sql = "SELECT DISTINCT market_destination as airport_code FROM ads_route_lowest_price"
+                sql = "SELECT DISTINCT market_destination as airport_code FROM ads_route_cabin_lowest_price"
                 params = []
             with conn.cursor() as cursor:
                 cursor.execute(sql, params)
@@ -162,7 +162,7 @@ class FlightSearchService:
     def get_active_airlines(self):
         try:
             conn = self._get_db_connection()
-            sql = "SELECT DISTINCT airline_code, airline_name FROM ads_route_lowest_price"
+            sql = "SELECT DISTINCT airline_code, airline_name FROM ads_route_cabin_lowest_price"
             with conn.cursor() as cursor:
                 cursor.execute(sql)
                 rows = cursor.fetchall()
@@ -200,7 +200,7 @@ class FlightSearchService:
         if not search_date:
             try:
                 with conn.cursor() as cursor:
-                    cursor.execute("SELECT MAX(search_date) as max_date FROM ads_route_lowest_price")
+                    cursor.execute("SELECT MAX(search_date) as max_date FROM ads_route_cabin_lowest_price")
                     res = cursor.fetchone()
                     search_date = res["max_date"].strftime("%Y-%m-%d") if res and res["max_date"] else "2022-04-19"
             except Exception as e:
@@ -209,7 +209,7 @@ class FlightSearchService:
 
         # 2. 组装 SQL 基础查询
         sql_base = """
-            FROM ads_route_lowest_price lp
+            FROM ads_route_cabin_lowest_price lp
             LEFT JOIN ads_route_offer_rank rk 
                 ON lp.search_date = rk.search_date 
                AND lp.market_origin = rk.market_origin 

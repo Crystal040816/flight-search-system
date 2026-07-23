@@ -424,9 +424,11 @@ def search_flights():
         result = flight_search_service.search_flights(
             departure=data.get('departure'),
             destination=data.get('destination'),
+            departure_city=data.get('departureCity'),
+            destination_city=data.get('destinationCity'),
             flight_date=data.get('flightDate'),
-            search_date=data.get('searchDate', '2022-04-19'),
-            cabin_code=data.get('cabinCode', 'economy'),
+            search_date=data.get('searchDate'),  # 去掉默认 '2022-04-19'，交给服务层动态匹配
+            cabin_code=data.get('cabinCode'),  # 关键修改：去掉默认 'economy'，改用 None，不强制过滤
             page=data.get('page', 1),
             size=data.get('size', 20),
             sort_by=data.get('sortBy', 'price'),

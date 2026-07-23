@@ -25,9 +25,9 @@ class DestinationsService:
             cursorclass=pymysql.cursors.DictCursor
         )
 
-    def get_lowest_price_destinations(self, departure_city: str, date: str = "2022-04-19"):
+    def get_lowest_price_destinations(self, departure_city: str, flight_date: str, search_date: str = None):
         """
-        纯数仓驱动：根据出发城市名 (origin_city)，在 SQL 级聚合计算出所有可达目的地的最低票价与详细起降属性
+        根据出发城市名 (origin_city)、起飞日期。若未传 search_date，自动匹配数据库中针对该航线日期的最新快照分区。
         """
         try:
             conn = self._get_db_connection()
@@ -35,7 +35,25 @@ class DestinationsService:
             print(f"[MySQL Connection Error] 数据库连接失败: {str(e)}")
             return self._get_fallback_destinations()
 
-        # 精妙的物理列聚合：支持多字段分组，直接捞出起降城市、机场及国家
+        # 1. 动态自适应：如果未传入快照日，自动在 SQL 级查出当前城市和起飞日期下，最新（最大）的一个 search_date
+        if not search_date:
+            try:
+                sql_max = """
+                    SELECT MAX(search_date) as max_date 
+                    FROM ads_route_cabin_lowest_price 
+                    WHERE origin_city = %s AND flight_date = %s
+                """
+                with conn.cursor() as cursor:
+                    cursor.execute(sql_max, [departure_city, flight_date])
+                    res = cursor.fetchone()
+                    # 如果查到了最大日期，格式化为字符串；否则使用 2022-04-19 兜底
+                    search_date = res["max_date"].strftime("%Y-%m-%d") if res and res["max_date"] else "2022-04-19"
+                    print(f"[SQL Debug] 目的地地图接口自动匹配到最新快照分区日: {search_date}")
+            except Exception as e:
+                print(f"[SQL Debug] 动态获取最新分区日失败，使用保底 2022-04-19: {str(e)}")
+                search_date = "2022-04-19"
+
+        # 2. 精准聚合 SQL
         sql = """
               SELECT origin_city              as departureCity, \
                      market_origin            as departure, \
@@ -43,8 +61,9 @@ class DestinationsService:
                      market_destination       as destination, \
                      destination_country_name as country, \
                      MIN(lowest_price)        as lowestPrice
-              FROM ads_route_lowest_price
+              FROM ads_route_cabin_lowest_price
               WHERE origin_city = %s
+                AND flight_date = %s
                 AND search_date = %s
               GROUP BY origin_city, market_origin, destination_city, market_destination, destination_country_name
               ORDER BY lowestPrice ASC \
@@ -52,24 +71,24 @@ class DestinationsService:
 
         try:
             with conn.cursor() as cursor:
-                cursor.execute(sql, [departure_city, date])
+                cursor.execute(sql, [departure_city, flight_date, search_date])
                 rows = cursor.fetchall()
 
             results = []
             for row in rows:
                 results.append({
-                    "departureCity": row["departureCity"],  # 1. 出发城市 (物理 origin_city)
-                    "departure": row["departure"],  # 2. 出发机场 (物理 market_origin)
-                    "city": row["city"],  # 3. 目的城市 (物理 destination_city)
-                    "destination": row["destination"],  # 4. 目的机场 (物理 market_destination)
-                    "country": row["country"] if row["country"] else "Unknown",  # 5. 国家 (物理 destination_country_name)
-                    "continent": "N/A",  # 6. 大洲 (提示：ADS表不包含大洲字段，为了不写手写映射，统一输出 N/A)
-                    "lowestPrice": float(row["lowestPrice"]) if row["lowestPrice"] else 0.0  # 7. 最低票价
+                    "departureCity": row["departureCity"],
+                    "departure": row["departure"],
+                    "city": row["city"],
+                    "destination": row["destination"],
+                    "country": row["country"] if row["country"] else "Unknown",
+                    "continent": "N/A",
+                    "lowestPrice": float(row["lowestPrice"]) if row["lowestPrice"] else 0.0
                 })
             return results
 
         except Exception as e:
-            print(f"[MySQL Query Error] 目的地地图聚合失败: {str(e)}")
+            print(f"[MySQL Query Error] 目的地地图聚合失败 (已进入保底降级): {str(e)}")
             return self._get_fallback_destinations()
         finally:
             conn.close()
