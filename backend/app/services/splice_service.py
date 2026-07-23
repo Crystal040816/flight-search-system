@@ -19,21 +19,21 @@ class SpliceService:
         self.graph = {}
         self.airports = []
 
-        # 加载真实拼接邻接图数据
+        # 完美对齐 B 同学的测试脚本：加载 splice_model.pkl 字典
         if os.path.exists(self.model_path):
             try:
                 splice_data = joblib.load(self.model_path)
                 self.graph = splice_data.get('route_graph', {})
                 self.airports = splice_data.get('airports', [])
-                print(f"[Splice Service] 成功加载算法拼接路线图，包含机场节点: {len(self.airports)} 个")
+                print(f"[Splice Service] 成功加载算法拼接路线图，包含机场节点: {len(self.airports)} 个，航线数: {sum(len(v) for v in self.graph.values())}")
             except Exception as e:
-                print(f"[Splice Service] 路线图加载失败，启用沙箱: {str(e)}")
+                print(f"[Splice Service] 路线图加载失败: {str(e)}")
         else:
-            print(f"[Splice Service] 找不到 splice_model.pkl，采用默认组合方案。")
+            print(f"[Splice Service] 找不到 splice_model.pkl，采用默认方案。")
 
     def get_spliced_routes(self, departure: str, destination: str, date: str, max_stops: int = 2):
         """
-        核心拼接：基于真实的 route_graph 邻接表，在内存中执行一中转（One-Stop）路线拼接
+        核心拼接：基于真实的 route_graph 邻接表字典，在内存中执行一中转（One-Stop）路线拼接
         """
         cache_key = f"splice:{departure}:{destination}:{date}:{max_stops}"
 
@@ -56,14 +56,14 @@ class SpliceService:
 
                 # 2. 遍历这些航点，寻找可以作为中转枢纽（Transit Hub）的节点
                 for leg in first_legs:
-                    mid_airport = leg.get("to")  # 比如中转机场 ATL
+                    mid_airport = leg.get("to")  # 中转机场
 
-                    # 3. 检查中转机场是否能直飞到达我们的最终目的地 (dest_code)
+                    # 3. 检查中转机场是否能直飞到达最终目的地 (dest_code)
                     if mid_airport in self.graph:
                         second_legs = self.graph[mid_airport]
                         for next_leg in second_legs:
                             if next_leg.get("to") == dest_code:
-                                # 4. 成功在拓扑图中锁定一条一中转拼接线路！组装为前端格式
+                                # 4. 成功在拓扑图中锁定一条一中转拼接线路！
                                 seg1 = {
                                     "fromAirport": dep_code,
                                     "toAirport": mid_airport,
@@ -94,10 +94,7 @@ class SpliceService:
                                     "segments": [seg1, seg2]
                                 })
             except Exception as e:
-                print(f"[Model Error] 物理图拼接失败，转为降级: {str(e)}")
-                spliced_routes = self._generate_fallback_spliced_routes(departure, destination, date)
-        else:
-            spliced_routes = self._generate_fallback_spliced_routes(departure, destination, date)
+                print(f"[Model Error] 拓扑图拼接异常: {str(e)}")
 
         # 默认只取前 5 条最优拼接路线
         spliced_routes = spliced_routes[:5]
@@ -109,9 +106,6 @@ class SpliceService:
                 print(f"[Redis Error] {str(e)}")
 
         return spliced_routes
-
-    def _generate_fallback_spliced_routes(self, departure: str, destination: str, date: str):
-        return []
 
 
 # 实例化
