@@ -66,7 +66,7 @@ class PricePredictService:
         """独立自连：从 MySQL 提取平均报价作为模型基准，不调用任何外部 search 代码"""
         try:
             conn = self._get_db_connection()
-            sql = "SELECT AVG(lowest_price) as avg_p FROM ads_route_cabin_lowest_price WHERE market_origin = %s AND market_destination = %s"
+            sql = "SELECT AVG(lowest_price) as avg_p FROM ads_route_cabin_lowest_price WHERE origin_city = %s AND destination_city = %s"
             with conn.cursor() as cursor:
                 cursor.execute(sql, [origin.upper(), destination.upper()])
                 res = cursor.fetchone()

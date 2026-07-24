@@ -14,7 +14,7 @@ def predict_price():
     tags:
       - 预测
     summary: 预测搜索日到起飞日之间的每日机票价格走势
-    description: 输入出发机场、目的地机场、起飞日期，自动计算天数并调起物理 price_predict_model.pkl 执行每日价格推演。返回统计、低价购买建议。
+    description: 输入出发地、目的地、起飞日期，自动计算天数并调起物理 price_predict_model.pkl 执行每日价格推演。返回统计、低价购买建议。
     parameters:
       - name: body
         in: body
@@ -28,12 +28,12 @@ def predict_price():
           properties:
             departure:
               type: string
-              description: 出发地机场 IATA 三字码
-              example: "LGA"
+              description: 出发地
+              example: "Atlanta"
             destination:
               type: string
-              description: 目的地机场 IATA 三字码
-              example: "SFO"
+              description: 目的地
+              example: "New York"
             flightDate:
               type: string
               format: date

@@ -1,206 +1,251 @@
-# backend/app/services/splice_service.py
-import os
 import json
+import os
+from collections import defaultdict
+
 import joblib
 import pymysql
+
 from app.config import Config
 
 
 class SpliceService:
+    MIN_CONNECTION_SECONDS = 45 * 60
+    MAX_CONNECTION_SECONDS = 12 * 60 * 60
+    MAX_RESULTS = 5
+
     def __init__(self):
         base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
         self.model_path = os.path.join(base_dir, "algorithm", "models", "splice_model.pkl")
         self.graph = {}
         self.airports = []
 
-        # 数据库直连参数，作为 ES 连接失败时的“B 计划”容灾备份
         self.host = Config.MYSQL_HOST
         self.port = Config.MYSQL_PORT
         self.db = Config.MYSQL_DB
         self.user = Config.MYSQL_USER
         self.password = Config.MYSQL_PASSWORD
+        self.search_date = Config.SPLICE_SEARCH_DATE
 
-        # 加载物理邻接表字典
         if os.path.exists(self.model_path):
             try:
                 splice_data = joblib.load(self.model_path)
-                self.graph = splice_data.get('route_graph', {})
-                self.airports = splice_data.get('airports', [])
-                print(f"[Splice Service] 成功加载算法拼接路线图，包含机场节点: {len(self.airports)} 个")
-            except Exception as e:
-                print(f"[Splice Service] 路线图加载失败: {str(e)}")
+                self.graph = splice_data.get("route_graph", {})
+                self.airports = splice_data.get("airports", [])
+                print(
+                    "[Splice Service] Loaded route graph with "
+                    f"{len(self.airports)} airport nodes"
+                )
+            except Exception as exc:
+                print(f"[Splice Service] Failed to load route graph: {exc}")
         else:
-            print(f"[Splice Service] 找不到 splice_model.pkl，采用默认方案。")
+            print(f"[Splice Service] Model not found: {self.model_path}")
 
     def _get_db_connection(self):
-        """建立并返回 MySQL 只读连接"""
         return pymysql.connect(
             host=self.host,
             port=self.port,
             user=self.user,
             password=self.password,
             database=self.db,
-            charset='utf8mb4',
-            cursorclass=pymysql.cursors.DictCursor
+            charset="utf8mb4",
+            cursorclass=pymysql.cursors.DictCursor,
+            connect_timeout=3,
+            read_timeout=10,
+            write_timeout=10,
         )
 
-    def get_spliced_routes(self, departure: str, destination: str, date: str, max_stops: int = 2):
+    def _candidate_midpoints(self, departure, destination):
+        midpoints = set()
+        for first_leg in self.graph.get(departure, []):
+            midpoint = first_leg.get("to")
+            if not midpoint or midpoint not in self.graph:
+                continue
+            if any(leg.get("to") == destination for leg in self.graph[midpoint]):
+                midpoints.add(midpoint)
+        return sorted(midpoints)
+
+    def _load_candidate_segments(self, departure, destination, date, midpoints):
+        route_pairs = [(departure, midpoint) for midpoint in midpoints]
+        route_pairs.extend((midpoint, destination) for midpoint in midpoints)
+        if not route_pairs:
+            return {}
+
+        pair_placeholders = ",".join(["(%s,%s)"] * len(route_pairs))
+        sql = f"""
+            SELECT market_origin,
+                   market_destination,
+                   departure_time_raw,
+                   departure_time_epoch,
+                   arrival_time_raw,
+                   arrival_time_epoch,
+                   travel_duration_minutes,
+                   lowest_price,
+                   airline_name,
+                   airline_code,
+                   equipment_summary,
+                   cabin_type,
+                   quote_snapshot_id
+            FROM ads_route_cabin_lowest_price
+            WHERE search_date = %s
+              AND flight_date = %s
+              AND (market_origin, market_destination) IN ({pair_placeholders})
+            ORDER BY market_origin,
+                     market_destination,
+                     lowest_price,
+                     departure_time_epoch,
+                     cabin_type,
+                     quote_snapshot_id
         """
-        极限性能优化版一中转拼接：优先从 Elasticsearch 读取，若失败则自动降级为 MySQL 容灾备份
-        """
-        # 1. 局部动态导入 redis_client 和 es_client，防止初始化时崩溃
+        params = [self.search_date, date]
+        params.extend(value for route_pair in route_pairs for value in route_pair)
+
+        connection = self._get_db_connection()
         try:
-            from app import redis_client, es_client
+            with connection.cursor() as cursor:
+                cursor.execute(sql, params)
+                rows = cursor.fetchall()
+        finally:
+            connection.close()
+
+        segments_by_route = defaultdict(list)
+        for row in rows:
+            key = (row["market_origin"].upper(), row["market_destination"].upper())
+            segments_by_route[key].append(row)
+        return segments_by_route
+
+    @staticmethod
+    def _format_duration(minutes):
+        minutes = max(0, int(minutes or 0))
+        hours, remaining_minutes = divmod(minutes, 60)
+        return f"{hours}h{remaining_minutes}m"
+
+    def _build_segment(self, row):
+        return {
+            "fromAirport": row["market_origin"],
+            "toAirport": row["market_destination"],
+            "airline": row["airline_name"] or "Unknown airline",
+            "airlineCode": row["airline_code"] or "",
+            "departureTime": row["departure_time_raw"],
+            "arrivalTime": row["arrival_time_raw"],
+            "price": float(row["lowest_price"]),
+            "duration": self._format_duration(row["travel_duration_minutes"]),
+            "aircraftModel": row["equipment_summary"] or "unknown",
+        }
+
+    def _best_connection(self, first_segments, second_segments):
+        best = None
+        best_score = None
+
+        for first in first_segments:
+            first_arrival = int(first["arrival_time_epoch"])
+            for second in second_segments:
+                second_departure = int(second["departure_time_epoch"])
+                layover_seconds = second_departure - first_arrival
+                if not self.MIN_CONNECTION_SECONDS <= layover_seconds <= self.MAX_CONNECTION_SECONDS:
+                    continue
+
+                journey_seconds = int(second["arrival_time_epoch"]) - int(
+                    first["departure_time_epoch"]
+                )
+                if journey_seconds <= 0:
+                    continue
+
+                total_price = float(first["lowest_price"]) + float(
+                    second["lowest_price"]
+                )
+                score = (
+                    total_price,
+                    journey_seconds,
+                    int(first["departure_time_epoch"]),
+                    first["quote_snapshot_id"],
+                    second["quote_snapshot_id"],
+                )
+                if best_score is None or score < best_score:
+                    best_score = score
+                    best = (first, second, total_price, journey_seconds)
+
+        return best
+
+    @staticmethod
+    def _get_cache_client():
+        if not Config.SPLICE_REDIS_ENABLED:
+            return None
+        try:
+            from app import redis_client
+
+            return redis_client
         except ImportError:
-            redis_client = None
-            es_client = None
+            return None
 
+    def get_spliced_routes(self, departure, destination, date, max_stops=2):
+        if int(max_stops) < 1:
+            return []
+
+        departure = departure.upper()
+        destination = destination.upper()
         cache_key = f"splice:{departure}:{destination}:{date}:{max_stops}"
+        cache_client = self._get_cache_client()
 
-        if redis_client:
+        if cache_client:
             try:
-                cached_data = redis_client.get(cache_key)
+                cached_data = cache_client.get(cache_key)
                 if cached_data:
                     return json.loads(cached_data)
-            except Exception:
-                pass
+            except Exception as exc:
+                print(f"[Splice Cache] Read failed: {exc}")
 
-        spliced_routes = []
-        dep_code = departure.upper()
-        dest_code = destination.upper()
+        midpoints = self._candidate_midpoints(departure, destination)
+        segments_by_route = self._load_candidate_segments(
+            departure, destination, date, midpoints
+        )
 
-        # ====================================================================
-        # A 计划：优先从具备倒排索引的 Elasticsearch 极速捞取当日所有航段数据
-        # ====================================================================
-        db_routes = {}
-        if es_client:
-            try:
-                # 组装 ES 查询 DSL 语句
-                body = {
-                    "query": {
-                        "bool": {
-                            "must": [
-                                {"term": {"flight_date": date}},
-                                {"term": {"search_date": "2022-04-19"}}
-                            ]
-                        }
-                    },
-                    "size": 5000  # 一次性最多读入 5000 条当日航段
+        routes = []
+        for midpoint in midpoints:
+            best = self._best_connection(
+                segments_by_route.get((departure, midpoint), []),
+                segments_by_route.get((midpoint, destination), []),
+            )
+            if not best:
+                continue
+
+            first, second, total_price, journey_seconds = best
+            routes.append(
+                {
+                    "_journeySeconds": journey_seconds,
+                    "legId": (
+                        f"spliced_{departure}_{midpoint}_{destination}_{date}_"
+                        f"{first['departure_time_epoch']}_{second['departure_time_epoch']}"
+                    ),
+                    "totalPrice": round(total_price, 2),
+                    "totalDuration": self._format_duration(journey_seconds // 60),
+                    "stops": 1,
+                    "segments": [
+                        self._build_segment(first),
+                        self._build_segment(second),
+                    ],
                 }
-                # 请与数据同学确认 ES 中索引的名称 (此处暂定为 ads_flight_search)
-                response = es_client.search(index="ads_flight_search", body=body)
-                hits = response["hits"]["hits"]
+            )
 
-                # 将数据组装为内存 Map。Key 为 (起飞, 降落) 元组，实现 O(1) 极速检索
-                for hit in hits:
-                    source = hit["_source"]
-                    key = (source["market_origin"].upper(), source["market_destination"].upper())
-                    db_routes[key] = {
-                        "price": float(source.get("total_fare") or 200.0),
-                        "airline": source.get("airline_name") or "联合航空",
-                        "airlineCode": source.get("airline_code") or "UA",
-                        "aircraftModel": source.get("equipment_description") or "Boeing 737"
-                    }
-                print(f"[ES Debug] 成功从 Elasticsearch 读取当日候选航段数: {len(db_routes)}")
-            except Exception as e:
-                print(f"[ES Error] 从 ES 读取数据失败: {str(e)}。正在自动降级，尝试从 MySQL 读取。")
-                db_routes = {}
+        routes.sort(
+            key=lambda route: (
+                route["totalPrice"],
+                route["_journeySeconds"],
+                route["legId"],
+            )
+        )
+        routes = routes[: self.MAX_RESULTS]
+        for route in routes:
+            route.pop("_journeySeconds")
 
-        # ====================================================================
-        # B 计划：如果 ES 挂了或没数据，自动降级启用 MySQL 容灾备份查询
-        # ====================================================================
-        if not db_routes:
+        if cache_client and routes:
             try:
-                conn = self._get_db_connection()
-                sql_all = """
-                          SELECT market_origin, \
-                                 market_destination, \
-                                 lowest_price, \
-                                 airline_name, \
-                                 airline_code, \
-                                 equipment_summary
-                          FROM ads_route_cabin_lowest_price
-                          WHERE flight_date = %s \
-                            AND search_date = '2022-04-19' \
-                          """
-                with conn.cursor() as cursor:
-                    cursor.execute(sql_all, [date])
-                    rows = cursor.fetchall()
-                conn.close()
+                cache_client.setex(
+                    cache_key, 1800, json.dumps(routes, ensure_ascii=False)
+                )
+            except Exception as exc:
+                print(f"[Splice Cache] Write failed: {exc}")
 
-                for row in rows:
-                    key = (row["market_origin"].upper(), row["market_destination"].upper())
-                    db_routes[key] = {
-                        "price": float(row["lowest_price"]) if row["lowest_price"] else 200.0,
-                        "airline": row["airline_name"] or "联合航空",
-                        "airlineCode": row["airline_code"] or "UA",
-                        "aircraftModel": row["equipment_summary"] or "Boeing 737"
-                    }
-                print(f"[MySQL Fallback] 成功从 MySQL 读取当日候选航段数: {len(db_routes)}")
-            except Exception as e:
-                print(f"[SQL Debug] 容灾方案 MySQL 查询失败: {str(e)}")
-
-        # 2. 内存级拓扑图拼接与数据碰撞
-        if self.graph and dep_code in self.graph:
-            try:
-                first_legs = self.graph[dep_code]
-                for leg in first_legs:
-                    mid_airport = leg.get("to")
-                    if mid_airport in self.graph:
-                        second_legs = self.graph[mid_airport]
-                        for next_leg in second_legs:
-                            if next_leg.get("to") == dest_code:
-                                seg1_info = db_routes.get((dep_code, mid_airport))
-                                seg2_info = db_routes.get((mid_airport, dest_code))
-
-                                if not seg1_info or not seg2_info:
-                                    continue
-
-                                total_price = seg1_info["price"] + seg2_info["price"]
-
-                                seg1 = {
-                                    "fromAirport": dep_code,
-                                    "toAirport": mid_airport,
-                                    "airline": seg1_info["airline"],
-                                    "airlineCode": seg1_info["airlineCode"],
-                                    "departureTime": f"{date} 06:00",
-                                    "arrivalTime": f"{date} 08:30",
-                                    "price": seg1_info["price"],
-                                    "duration": "2h30m",
-                                    "aircraftModel": seg1_info["aircraftModel"]
-                                }
-                                seg2 = {
-                                    "fromAirport": mid_airport,
-                                    "toAirport": dest_code,
-                                    "airline": seg2_info["airline"],
-                                    "airlineCode": seg2_info["airlineCode"],
-                                    "departureTime": f"{date} 11:30",
-                                    "arrivalTime": f"{date} 14:00",
-                                    "price": seg2_info["price"],
-                                    "duration": "2h30m",
-                                    "aircraftModel": seg2_info["aircraftModel"]
-                                }
-                                spliced_routes.append({
-                                    "legId": f"spliced_{dep_code}_{mid_airport}_{dest_code}_{date}",
-                                    "totalPrice": total_price,
-                                    "totalDuration": "8h0m",
-                                    "stops": 1,
-                                    "segments": [seg1, seg2]
-                                })
-            except Exception as e:
-                print(f"[Model Error] 拓扑图拼接异常: {str(e)}")
-
-        spliced_routes = spliced_routes[:5]
-
-        # 3. 尝试回写 Redis 缓存
-        if redis_client and spliced_routes:
-            try:
-                redis_client.setex(cache_key, 1800, json.dumps(spliced_routes, ensure_ascii=False))
-            except Exception:
-                pass
-
-        return spliced_routes
+        return routes
 
 
-# 实例化
 splice_service = SpliceService()
