@@ -12,6 +12,11 @@ CREATE TABLE IF NOT EXISTS ads_route_lowest_price (
     destination_country_code STRING,
     destination_country_name STRING,
     flight_date DATE,
+    departure_time_raw STRING COMMENT 'First-segment departure time with source timezone',
+    departure_time_epoch BIGINT COMMENT 'First-segment departure Epoch seconds',
+    arrival_time_raw STRING COMMENT 'Last-segment arrival time with source timezone',
+    arrival_time_epoch BIGINT COMMENT 'Last-segment arrival Epoch seconds',
+    travel_duration_minutes INT COMMENT 'Total itinerary duration in minutes',
     lowest_price DECIMAL(12,2),
     avg_price DECIMAL(12,2),
     quote_snapshot_id STRING,
@@ -40,6 +45,11 @@ CREATE TABLE IF NOT EXISTS ads_route_cabin_lowest_price (
     destination_country_code STRING,
     destination_country_name STRING,
     flight_date DATE,
+    departure_time_raw STRING COMMENT 'First-segment departure time with source timezone',
+    departure_time_epoch BIGINT COMMENT 'First-segment departure Epoch seconds',
+    arrival_time_raw STRING COMMENT 'Last-segment arrival time with source timezone',
+    arrival_time_epoch BIGINT COMMENT 'Last-segment arrival Epoch seconds',
+    travel_duration_minutes INT COMMENT 'Total itinerary duration in minutes',
     cabin_type STRING COMMENT 'Single cabin code, mixed, or unknown',
     cabin_summary STRING,
     is_mixed_cabin BOOLEAN,
@@ -54,7 +64,7 @@ CREATE TABLE IF NOT EXISTS ads_route_cabin_lowest_price (
     currency STRING,
     etl_time TIMESTAMP
 )
-COMMENT 'Lowest itinerary offer grouped by route, flight date, and cabin type'
+COMMENT 'Lowest itinerary offer grouped by route, flight date, departure time, and cabin type'
 PARTITIONED BY (search_date DATE)
 STORED AS PARQUET
 TBLPROPERTIES ('parquet.compression' = 'SNAPPY');

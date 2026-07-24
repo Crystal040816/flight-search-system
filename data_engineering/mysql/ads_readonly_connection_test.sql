@@ -33,6 +33,9 @@ SELECT
     market_destination,
     destination_city,
     flight_date,
+    departure_time_raw,
+    arrival_time_raw,
+    travel_duration_minutes,
     lowest_price,
     airline_code,
     seats_remaining,
@@ -49,11 +52,21 @@ SELECT
     market_origin,
     market_destination,
     flight_date,
+    departure_time_raw,
+    arrival_time_raw,
+    travel_duration_minutes,
     cabin_type,
     lowest_price,
     avg_price,
     offer_count,
     seats_remaining
 FROM ads_route_cabin_lowest_price
-ORDER BY search_date, market_origin, market_destination, flight_date, lowest_price
+ORDER BY
+    search_date,
+    market_origin,
+    market_destination,
+    flight_date,
+    departure_time_epoch,
+    cabin_type,
+    lowest_price
 LIMIT 20;

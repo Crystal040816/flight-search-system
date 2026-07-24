@@ -28,6 +28,7 @@ CSV 原始文件
 | [DWD 数据字典](dwd_data_dictionary.md) | 算法、数据工程成员 | 明细粒度、关联键、样本范围和字段口径 |
 | [DWS 数据字典](dws_data_dictionary.md) | 算法、分析成员 | 日度汇总指标及统计口径 |
 | [ADS 数据字典](ads_data_dictionary.md) | 后端、Superset、展示成员 | MySQL 表、主键、指标语义和查询示例 |
+| [后端本地 ADS 恢复说明](backend_ads_local_restore.md) | 后端成员 | SQL 备份校验、MySQL 本地恢复、只读账号和结果核对 |
 | [DWD HDFS 读取说明](../data_engineering/hive/dwd_hdfs_access.md) | 算法成员 | Spark/Hive/HDFS 读取方式 |
 | [质量检查与 Hive 质量表说明](../data_engineering/hive/dq_check_result_guide.md) | 全体成员 | DWD/DWS/ADS 验收结果和质量门禁 |
 | [手工运维与流水线运行手册](manual_pipeline_runbook.md) | 数据工程、运维成员 | 服务检查、启停顺序、只读验收和受控重跑 |
@@ -42,6 +43,8 @@ DDL 是最终结构依据：
 - ADS 逻辑结构：`data_engineering/hive/ads_ddl.sql`
 - ADS MySQL 结构：`data_engineering/mysql/ads_ddl.sql`
 - ADS 2026-07-22 升级：`data_engineering/mysql/ads_schema_upgrade_20260722.sql`
+- ADS 2026-07-23 时间字段升级：`data_engineering/mysql/ads_schema_upgrade_20260723.sql`
+- ADS 舱型表时间粒度升级：`data_engineering/mysql/ads_schema_upgrade_cabin_time_grain_20260723.sql`
 - ADS 发布后质量检查：`data_engineering/mysql/ads_quality_checks.sql`
 
 ## 3. 当前数据批次
@@ -57,7 +60,7 @@ DDL 是最终结构依据：
 | DWS 机场日统计 | 96 |
 | DWS 航线画像 | 234 |
 | ADS 最低价 | 26,562 |
-| ADS 舱型最低价 | 29,587 |
+| ADS 舱型最低价 | 714,982 |
 | ADS 航线排行 | 1,246 |
 | ADS 航司报价占比 | 71 |
 
@@ -79,7 +82,7 @@ DDL 是最终结构依据：
 
 ## 5. 当前冻结状态与变更规则
 
-当前 DWD、DWS 和 2026-07-22 ADS 发布批次已经验收并冻结。ADS 共 4 张 MySQL 服务表，其中最低价表 26,562 行、舱型最低价表 29,587 行。项目不依赖调度平台运行，正式处理逻辑保存在 `data_engineering/scripts/`，需要时由数据工程成员按运行手册手工执行。
+当前 DWD、DWS 基线和 2026-07-23 ADS 发布批次已经验收并冻结。ADS 保持 4 张 MySQL 服务表；两张最低价表已补充时间字段，舱型最低价表已细化到“首段起飞时刻 + 舱型”粒度，正式行数为 714,982。发布后的 10 项质量检查全部通过，LAX 到 BOS 的业务抽查返回 67 个唯一起飞时刻。项目不依赖调度平台运行，正式处理逻辑保存在 `data_engineering/scripts/`，需要时由数据工程成员按运行手册手工执行。
 
 在没有明确变更需求和备份的情况下，不得重新执行带写入行为的 ETL。重新处理时必须：
 

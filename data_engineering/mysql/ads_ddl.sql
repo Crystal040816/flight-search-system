@@ -12,6 +12,11 @@ CREATE TABLE IF NOT EXISTS ads_route_lowest_price (
     destination_country_code CHAR(2) NULL,
     destination_country_name VARCHAR(128) NULL,
     flight_date DATE NOT NULL,
+    departure_time_raw VARCHAR(64) NOT NULL,
+    departure_time_epoch BIGINT NOT NULL,
+    arrival_time_raw VARCHAR(64) NOT NULL,
+    arrival_time_epoch BIGINT NOT NULL,
+    travel_duration_minutes INT NOT NULL,
     lowest_price DECIMAL(12,2) NOT NULL,
     avg_price DECIMAL(12,2) NOT NULL,
     quote_snapshot_id CHAR(64) NOT NULL,
@@ -49,6 +54,11 @@ CREATE TABLE IF NOT EXISTS ads_route_cabin_lowest_price (
     destination_country_code CHAR(2) NULL,
     destination_country_name VARCHAR(128) NULL,
     flight_date DATE NOT NULL,
+    departure_time_raw VARCHAR(64) NOT NULL,
+    departure_time_epoch BIGINT NOT NULL,
+    arrival_time_raw VARCHAR(64) NOT NULL,
+    arrival_time_epoch BIGINT NOT NULL,
+    travel_duration_minutes INT NOT NULL,
     cabin_type VARCHAR(32) NOT NULL,
     cabin_summary VARCHAR(255) NOT NULL,
     is_mixed_cabin BOOLEAN NOT NULL,
@@ -67,6 +77,7 @@ CREATE TABLE IF NOT EXISTS ads_route_cabin_lowest_price (
         market_origin,
         market_destination,
         flight_date,
+        departure_time_epoch,
         cabin_type
     ),
     KEY idx_cabin_lowest_route (
@@ -74,6 +85,7 @@ CREATE TABLE IF NOT EXISTS ads_route_cabin_lowest_price (
         market_origin,
         market_destination,
         flight_date,
+        departure_time_epoch,
         lowest_price
     ),
     KEY idx_cabin_lowest_type (search_date, cabin_type, lowest_price)
