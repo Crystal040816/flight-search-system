@@ -8,6 +8,13 @@ REDIS_PORT = 6379
 REDIS_DB = 0
 REDIS_PASSWORD = None
 
+
+def env_flag(name, default=False):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'flight-search-secret-key-12345'
 
@@ -22,8 +29,14 @@ class Config:
     REDIS_PASSWORD = os.environ.get('REDIS_PASSWORD') or REDIS_PASSWORD
 
     # 新增：MySQL ADS 业务层配置 (通过本地转发端口 13306 访问，密码填写组长/数据同学给您的真实密码)
-    MYSQL_HOST = '127.0.0.1'
-    MYSQL_PORT = 3306
-    MYSQL_DB = 'flight_ads'
-    MYSQL_USER = 'flight_ads_reader'
-    MYSQL_PASSWORD = '123456'
+    MYSQL_HOST = os.environ.get('MYSQL_HOST') or '127.0.0.1'
+    MYSQL_PORT = int(os.environ.get('MYSQL_PORT') or 3306)
+    MYSQL_DB = os.environ.get('MYSQL_DB') or 'flight_ads'
+    MYSQL_USER = os.environ.get('MYSQL_USER') or 'flight_ads_reader'
+    MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD') or '123456'
+
+    SPLICE_SEARCH_DATE = os.environ.get('SPLICE_SEARCH_DATE') or '2022-04-19'
+    SPLICE_REDIS_ENABLED = env_flag('SPLICE_REDIS_ENABLED', False)
+    EXTERNAL_SERVICE_TIMEOUT_SECONDS = float(
+        os.environ.get('EXTERNAL_SERVICE_TIMEOUT_SECONDS') or 1.0
+    )

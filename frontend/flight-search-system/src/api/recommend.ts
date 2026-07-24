@@ -27,6 +27,7 @@ export interface RecommendFlight {
   legId: string
   cabinSummary: string
   duration: string
+  // 其他字段根据需要扩展
 }
 
 export interface RecommendItem {

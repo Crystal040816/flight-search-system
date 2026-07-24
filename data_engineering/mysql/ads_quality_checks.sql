@@ -27,9 +27,21 @@ WHERE cabin_type = '' OR cabin_summary = '' OR offer_count <= 0
 UNION ALL
 SELECT '07_duplicate_cabin_grain', COUNT(*)
 FROM (
-    SELECT search_date, market_origin, market_destination, flight_date, cabin_type
+    SELECT
+        search_date,
+        market_origin,
+        market_destination,
+        flight_date,
+        departure_time_epoch,
+        cabin_type
     FROM ads_route_cabin_lowest_price
-    GROUP BY search_date, market_origin, market_destination, flight_date, cabin_type
+    GROUP BY
+        search_date,
+        market_origin,
+        market_destination,
+        flight_date,
+        departure_time_epoch,
+        cabin_type
     HAVING COUNT(*) > 1
 ) AS duplicates
 UNION ALL
@@ -41,4 +53,20 @@ LEFT JOIN ads_route_cabin_lowest_price AS cabin_price
  AND route_price.market_destination = cabin_price.market_destination
  AND route_price.flight_date = cabin_price.flight_date
  AND route_price.quote_snapshot_id = cabin_price.quote_snapshot_id
-WHERE cabin_price.quote_snapshot_id IS NULL;
+WHERE cabin_price.quote_snapshot_id IS NULL
+UNION ALL
+SELECT '09_invalid_route_times', COUNT(*)
+FROM ads_route_lowest_price
+WHERE departure_time_raw IS NULL OR TRIM(departure_time_raw) = ''
+   OR arrival_time_raw IS NULL OR TRIM(arrival_time_raw) = ''
+   OR departure_time_epoch IS NULL OR departure_time_epoch <= 0
+   OR arrival_time_epoch IS NULL OR arrival_time_epoch <= departure_time_epoch
+   OR travel_duration_minutes IS NULL OR travel_duration_minutes <= 0
+UNION ALL
+SELECT '10_invalid_cabin_times', COUNT(*)
+FROM ads_route_cabin_lowest_price
+WHERE departure_time_raw IS NULL OR TRIM(departure_time_raw) = ''
+   OR arrival_time_raw IS NULL OR TRIM(arrival_time_raw) = ''
+   OR departure_time_epoch IS NULL OR departure_time_epoch <= 0
+   OR arrival_time_epoch IS NULL OR arrival_time_epoch <= departure_time_epoch
+   OR travel_duration_minutes IS NULL OR travel_duration_minutes <= 0;

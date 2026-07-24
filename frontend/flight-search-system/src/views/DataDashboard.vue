@@ -1,288 +1,263 @@
+<!-- src/views/PredictorDashboard.vue -->
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive } from 'vue'
+import { Search, Switch } from '@element-plus/icons-vue'
 import ZeppelinChart from '@/components/ZeppelinChart.vue'
 import skyBg from '../pictures/天空.jpg'
 
-// 1. Notebook & Paragraph 配置
-const NOTEBOOK_ID = '2MZABZFK3' // Notebook ID
+// Notebook ID
+const NOTEBOOK_ID = '2MZABZFK3'
+
+// 填入你 5 个段落对应的真实 Paragraph ID
 const PARAGRAPH_IDS = {
-  popularRoute: 'paragraph_1784707702638_1511698672', // 1.1 热门航线 TOP 15
-  priceDrop: 'paragraph_1784865972906_441817053',    // 2.1 价格跳水榜
-  priceSurge: 'paragraph_1784866678648_1702634311',   // 2.2 价格暴涨预警榜
-  urgentFlight: 'paragraph_1784883095841_504737919'   // 3.1 临期余票告急
+  p1_routeTrend: 'paragraph_1784631594952_753660793', // Paragraph 1: 指定航线价格趋势 (折线图)
+  p2_destRank: 'paragraph_1620000000000_222222222',   // Paragraph 2: 最低价目的地排行榜 (柱状图)
+  p3_offerRank: 'paragraph_1620000000000_333333333',  // Paragraph 3: 热门航线报价热度与价格变动 (双Y轴图)
+  p4_sharePie: 'paragraph_1620000000000_444444444',   // Paragraph 4: 航司报价供给占比 (环形饼图)
+  p5_shareVsPrice: 'paragraph_1620000000000_555555555'// Paragraph 5: 航司供给占比 vs 均价 (双Y轴图)
 }
 
-// 2. 当前选中的视图模式
-const activeTab = ref<'popular' | 'trends' | 'urgent'>('popular')
-
-// 3. 全局筛选条件
-const searchForm = reactive({
-  searchDate: '2022-04-18',
-  originCity: 'New York',
-  maxSeats: 5,
-  sortType: 'seats_asc' // 默认
-})
-
-// 3 种排序选项
-const sortOptions = [
-  { label: '剩余座位数 (从低到高)', value: 'seats_asc' },
-  { label: '距起飞天数 (从低到高)', value: 'days_asc' },
-  { label: '机票价格 (从低到高)', value: 'price_asc' }
+// 选项卡（分区）定义
+const tabOptions = [
+  { label: '航线价格与趋势分析', value: 'p1' },
+  { label: '低价目的地 TOP 15 推荐', value: 'p2' },
+  { label: '热门航线报价热度与价格变动', value: 'p3' },
+  { label: '各航司报价供给占比分布', value: 'p4' },
+  { label: '航司报价供给占比 vs 平均含税报价', value: 'p5' }
 ]
 
-// 筛选下拉框可选项
-const dateOptions = ['2022-04-18', '2022-04-19', '2022-04-22', '2022-04-23', '2022-04-26', '2022-04-27']
-const cityOptions = [
-  'Atlanta', 'Boston', 'Charlotte', 'Chicago', 'Dallas-Fort Worth',
-  'Denver', 'Detroit', 'Dulles', 'Los Angeles', 'Miami',
-  'New York', 'Newark', 'Oakland', 'Philadelphia', 'San Francisco'
-]
+// 当前选中的分析分区（默认展示第一个）
+const activeTab = ref('p1')
 
-// 动态构建 queryParams
-const chartQueryParams = computed(() => {
-  return {
-    '搜索日期': String(searchForm.searchDate),
-    '出发城市': String(searchForm.originCity),
-    '最大剩余座位': String(searchForm.maxSeats),
-    '排序方式': String(searchForm.sortType)
-  }
+// 机场选项
+const cityOptions = ref([
+  { label: '广州 (CAN)', value: 'CAN' },
+  { label: '曼谷 (BKK)', value: 'BKK' },
+  { label: '纽约 (LGA)', value: 'LGA' },
+  { label: '旧金山 (SFO)', value: 'SFO' }
+])
+
+// 顶栏筛选状态
+const fromCity = ref('CAN')
+const toCity = ref('BKK')
+const departureDate = ref('2022-04-18')
+
+// 发送给 Zeppelin 的响应式参数
+const activeQueryParams = reactive({
+  '搜索日期': departureDate.value,
+  '起点机场': fromCity.value,
+  '终点机场': toCity.value
 })
+
+// 点击“查询”统一刷新数据
+const handleSearch = () => {
+  activeQueryParams['搜索日期'] = departureDate.value
+  activeQueryParams['起点机场'] = fromCity.value
+  activeQueryParams['终点机场'] = toCity.value
+}
+
+// 切换起点与终点
+const swapCities = () => {
+  const temp = fromCity.value
+  fromCity.value = toCity.value
+  toCity.value = temp
+}
 </script>
 
 <template>
-  <div class="dashboard-container" :style="{ backgroundImage: `url(${skyBg})` }">
-    <!-- 顶栏：标题 + 筛选器 + 3大板块 Tab 切换 -->
-    <header class="dashboard-header">
-      <div class="header-title">
-        <span class="pulse-icon"></span>
-        <h2>航班决策看板</h2>
+  <div class="predictor-container" :style="{ backgroundImage: `url(${skyBg})` }">
+
+    <!-- 1. 顶部筛选控制栏 -->
+    <div class="top-filter-navigation">
+      <div class="icon-clock-box">📊</div>
+
+      <!-- 左侧：线路与日期筛选器 -->
+      <div class="inputs-row">
+        <el-select v-model="fromCity" placeholder="起点机场" class="dark-select route-select">
+          <el-option v-for="item in cityOptions" :key="item.value" :label="item.label" :value="item.value" />
+        </el-select>
+
+        <el-icon class="transfer-icon" @click="swapCities" style="cursor: pointer; color: #38bdf8;"><Switch /></el-icon>
+
+        <el-select v-model="toCity" placeholder="终点机场" class="dark-select route-select">
+          <el-option v-for="item in cityOptions" :key="item.value" :label="item.label" :value="item.value" />
+        </el-select>
+
+        <el-date-picker
+          v-model="departureDate"
+          type="date"
+          placeholder="选择搜索日期"
+          class="dark-date-picker"
+          value-format="YYYY-MM-DD"
+        />
+
+        <el-button type="primary" class="search-btn" @click="handleSearch">
+          <el-icon><Search /></el-icon>数据检索 / 刷新
+        </el-button>
       </div>
 
-      <!-- 全局筛选控制栏 -->
-      <div class="filter-bar">
-        <div class="filter-item">
-          <label>搜索日期：</label>
-          <el-select v-model="searchForm.searchDate" size="small" class="custom-select">
-            <el-option v-for="d in dateOptions" :key="d" :label="d" :value="d" />
-          </el-select>
-        </div>
+      <!-- 空白占位拉开距离 -->
+      <div class="flex-spacer"></div>
 
-        <div class="filter-item">
-          <label>出发城市：</label>
-          <el-select v-model="searchForm.originCity" size="small" class="custom-select">
-            <el-option v-for="c in cityOptions" :key="c" :label="c" :value="c" />
-          </el-select>
-        </div>
-
-        <div class="filter-item">
-          <label>临期最大余票：</label>
-          <el-input-number
-            v-model="searchForm.maxSeats"
-            :min="1"
-            :max="10"
-            size="small"
-            controls-position="right"
-            class="custom-input-number"
+      <!-- 右上角：分析分区选择列表 -->
+      <div class="view-selector-box">
+        <span class="selector-label">选择视图：</span>
+        <el-select v-model="activeTab" class="dark-select tab-select" placeholder="切换分析分区">
+          <el-option
+            v-for="item in tabOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
           />
-        </div>
-        <div v-if="activeTab === 'urgent'" class="filter-item">
-            <label>排序方式：</label>
-            <el-select v-model="searchForm.sortType" size="small" class="custom-select" style="width: 170px;">
-              <el-option v-for="s in sortOptions" :key="s.value" :label="s.label" :value="s.value" />
-            </el-select>
-          </div>
-        </div>
-
-      <!-- 3 大板块 Tab 切换按钮 -->
-      <div class="view-tabs">
-        <button :class="{ active: activeTab === 'popular' }" @click="activeTab = 'popular'">热门航线 Top15</button>
-        <button :class="{ active: activeTab === 'trends' }" @click="activeTab = 'trends'">票价波动榜 (跳水/暴涨)</button>
-        <button :class="{ active: activeTab === 'urgent' }" @click="activeTab = 'urgent'">临期余票告急</button>
+        </el-select>
       </div>
-    </header>
+    </div>
 
-    <!-- 主体图表展示区域 -->
-    <main class="dashboard-body">
+    <!-- 2. 看板核心区 (按需要选择只展示选中的单视图) -->
+    <div class="single-chart-display-layout">
 
-      <!-- 看板 1: 热门航线 TOP 15 -->
-      <div v-if="activeTab === 'popular'" class="single-view">
+      <!-- 分区 1：指定航线价格趋势分析 -->
+      <div v-if="activeTab === 'p1'" class="chart-wrapper">
         <ZeppelinChart
           :notebook-id="NOTEBOOK_ID"
-          :paragraph-id="PARAGRAPH_IDS.popularRoute"
-          title="热门航线热度排行榜 (TOP 15)"
-          badge-text="1"
-          badge-type="green"
+          :paragraph-id="PARAGRAPH_IDS.p1_routeTrend"
+          :title="`航线价格与趋势分析 (${fromCity} ➔ ${toCity})`"
+          badge-text="01" badge-type="green"
+          render-type="line"
+          sub-text="观察目标航线随着未来出发日期的最低价与均价波动"
+          :query-params="activeQueryParams"
+        />
+      </div>
+
+      <!-- 分区 2：低价目的地排行榜 -->
+      <div v-if="activeTab === 'p2'" class="chart-wrapper">
+        <ZeppelinChart
+          :notebook-id="NOTEBOOK_ID"
+          :paragraph-id="PARAGRAPH_IDS.p2_destRank"
+          title="低价目的地 TOP 15 推荐"
+          badge-text="02" badge-type="green"
+          render-type="bar"
+          sub-text="对比全网最低价与均价，挑选最便宜目的地"
+          :query-params="activeQueryParams"
+        />
+      </div>
+
+      <!-- 分区 3：热门航线报价热度 -->
+      <div v-if="activeTab === 'p3'" class="chart-wrapper">
+        <ZeppelinChart
+          :notebook-id="NOTEBOOK_ID"
+          :paragraph-id="PARAGRAPH_IDS.p3_offerRank"
+          title="TOP 10 热门航线报价热度与价格变动"
+          badge-text="03" badge-type="green"
           render-type="dual-axis"
-          sub-text="柱状: 报价搜寻数 (热度) | 折线: 航线均价"
-          :query-params="chartQueryParams"
+          sub-text="柱状：报价快照数 (左轴) | 折线：均价变化率% (右轴)"
+          :query-params="activeQueryParams"
         />
       </div>
 
-      <!-- 看板 2: 行情波动（跳水榜 vs 暴涨榜）同页左右对比视图  -->
-      <div v-else-if="activeTab === 'trends'" class="trends-split-box">
-        <div class="split-card">
-          <ZeppelinChart
-            :notebook-id="NOTEBOOK_ID"
-            :paragraph-id="PARAGRAPH_IDS.priceDrop"
-            title="今日价格跳水榜"
-            badge-text="跌"
-            badge-type="green"
-            render-type="table"
-            sub-text="跌幅最大的航线 (抄底推荐)"
-            :query-params="chartQueryParams"
-          />
-        </div>
-        <div class="split-card">
-          <ZeppelinChart
-            :notebook-id="NOTEBOOK_ID"
-            :paragraph-id="PARAGRAPH_IDS.priceSurge"
-            title="价格暴涨预警榜"
-            badge-text="涨"
-            badge-type="pink"
-            render-type="table"
-            sub-text="涨幅最大的航线 (及早订票)"
-            :query-params="chartQueryParams"
-          />
-        </div>
-      </div>
-
-      <!-- 看板 3: 临期余票告急低价榜  -->
-      <div v-else-if="activeTab === 'urgent'" class="single-view">
+      <!-- 分区 4：各航司报价供给占比 -->
+      <div v-if="activeTab === 'p4'" class="chart-wrapper">
         <ZeppelinChart
           :notebook-id="NOTEBOOK_ID"
-          :paragraph-id="PARAGRAPH_IDS.urgentFlight"
-          title="临期（7天内）余票告急低价机票"
-          badge-text="3"
-          badge-type="green"
-          render-type="table"
-          sub-text="优先呈现余票 1~5 张且价格较低的舱位"
-          :query-params="chartQueryParams"
+          :paragraph-id="PARAGRAPH_IDS.p4_sharePie"
+          title="各航司报价供给占比分布"
+          badge-text="04" badge-type="green"
+          render-type="pie"
+          sub-text="直观呈现市场中各航司的运力/报价投放主力"
+          :query-params="activeQueryParams"
         />
       </div>
 
-    </main>
+      <!-- 分区 5：航司报价供给占比 vs 平均含税报价 -->
+      <div v-if="activeTab === 'p5'" class="chart-wrapper">
+        <ZeppelinChart
+          :notebook-id="NOTEBOOK_ID"
+          :paragraph-id="PARAGRAPH_IDS.p5_shareVsPrice"
+          title="航司报价供给占比 vs 平均含税报价"
+          badge-text="05" badge-type="green"
+          render-type="dual-axis"
+          sub-text="柱状：供给占比% (左轴) | 折线：平均报价USD (右轴)"
+          :query-params="activeQueryParams"
+        />
+      </div>
+
+    </div>
   </div>
 </template>
 
 <style scoped>
-.dashboard-container {
-  width: 100% !important;
-  height: 100% !important;
-  background-color: #0b0f19;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  color: #f1f5f9;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+/* 页面基本布局 */
+.predictor-container {
+  position: fixed;
+  top: 0; bottom: 0; right: 0; left: 240px;
+  height: 100vh !important;
   box-sizing: border-box;
-}
-
-.dashboard-header {
-  width: 100%;
-  height: 56px;
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  flex-shrink: 0;
-  box-sizing: border-box;
+  padding: 20px;
+  display: flex; flex-direction: column; gap: 16px;
+  overflow: hidden; /* 单图模式下取消整体页面滚动 */
   z-index: 10;
+  background-size: cover; background-position: center;
 }
 
-.header-title {
+.top-filter-navigation {
+  display: flex; align-items: center; gap: 16px; flex-shrink: 0;
+  width: 100%;
+}
+.icon-clock-box { font-size: 18px; color: #9ca3af; flex-shrink: 0; }
+.inputs-row { display: flex; align-items: center; gap: 12px; }
+.route-select { width: 140px; }
+.dark-date-picker { width: 180px; }
+
+.flex-spacer { flex: 1; } /* 挤开左右内容 */
+
+/* 右上角下拉选择框 */
+.view-selector-box {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  flex-shrink: 0;
 }
-.header-title h2 {
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  background: linear-gradient(90deg, #38bdf8, #818cf8);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin: 0;
+.selector-label {
+  color: #9ca3af;
+  font-size: 13px;
+  white-space: nowrap;
 }
-.pulse-icon {
-  width: 8px;
-  height: 8px;
-  background-color: #10b981;
-  border-radius: 50%;
-  box-shadow: 0 0 8px #10b981;
+.tab-select {
+  width: 260px;
 }
 
-.filter-bar {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-.filter-item {
-  display: flex;
-  align-items: center;
-  font-size: 12px;
-  color: #94a3b8;
-}
-.custom-select {
-  width: 120px;
-}
-.custom-input-number {
-  width: 90px;
+/* 强制将日期选择器背景改为白色，文字保持清晰 */
+:deep(.light-date-picker),
+:deep(.light-date-picker .el-input__wrapper) {
+  background-color: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid #cbd5e1 !important;
 }
 
-.view-tabs {
-  display: flex;
-  background: rgba(30, 41, 59, 0.6);
-  padding: 3px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-.view-tabs button {
-  background: transparent;
-  border: none;
-  color: #94a3b8;
-  padding: 5px 12px;
-  font-size: 12px;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-}
-.view-tabs button.active {
-  background: #38bdf8;
-  color: #0f172a;
-  font-weight: bold;
+/* 调整内部文字与图标颜色 */
+:deep(.light-date-picker .el-input__inner) {
+  color: #0284c7 !important;
+  font-weight: 700 !important;
+  font-size: 14px !important;
 }
 
-.dashboard-body {
+:deep(.light-date-picker .el-input__prefix),
+:deep(.light-date-picker .el-input__suffix) {
+  color: #64748b !important;
+}
+
+.search-btn { height: 32px !important; padding: 0 16px !important; font-weight: 600; }
+
+/* 单个图表占满展示区域 */
+.single-chart-display-layout {
   flex: 1;
-  width: 100% !important;
-  padding: 12px;
-  min-height: 0;
-  box-sizing: border-box;
+  width: 100%;
+  height: calc(100% - 50px);
+  position: relative;
 }
 
-.trends-split-box {
-  display: flex;
-  gap: 12px;
-  width: 100% !important;
+.chart-wrapper {
+  width: 100%;
   height: 100%;
-  box-sizing: border-box;
-}
-
-.split-card {
-  flex: 1 1 0% !important;
-  width: 0 !important;
-  min-width: 0 !important;
-  height: 100%;
-}
-
-.single-view {
-  width: 100% !important;
-  height: 100%;
-  box-sizing: border-box;
 }
 </style>

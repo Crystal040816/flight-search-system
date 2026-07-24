@@ -167,11 +167,24 @@ ADS 业务结果存放在 MySQL `flight_ads` 数据库；ADS 质量摘要仍写�
 | `04_missing_origin_dimensions` | PASS | 失败数 0 |
 | `05_missing_destination_dimensions` | PASS | 失败数 0 |
 | `06_invalid_cabin_metrics` | PASS | 失败数 0 |
-| `07_duplicate_cabin_grain` | PASS | 失败数 0 |
+| `07_duplicate_cabin_grain` | PASS | 旧粒度重复数 0 |
 | `08_lowest_quote_missing_from_cabin_table` | PASS | 失败数 0 |
 
 这 8 项是 2026-07-22 的 MySQL 发布后验收结果，不属于
 `ads_sample_20260721_1142`，也没有修改 Hive 中已有的 7 项 ADS 基线记录。
+
+### 5.5 ADS 2026-07-23 时间字段扩展
+
+当前版本的 `data_engineering/mysql/ads_quality_checks.sql` 在上述 8 项之后新增：
+
+| 指标 | 通过条件 | 检查内容 |
+| --- | --- | --- |
+| `09_invalid_route_times` | 失败数 0 | 总体最低价表的首段起飞、末段到达及总时长有效 |
+| `10_invalid_cabin_times` | 失败数 0 | 舱型最低价表的首段起飞、末段到达及总时长有效 |
+
+两项检查同时验证原始时间非空、Epoch 秒为正、末段到达晚于首段起飞且总行程时长大于 0。2026-07-23 正式发布后，两项失败数均为 0。
+
+本次不新增第五张表，而是把 `ads_route_cabin_lowest_price` 细化为“搜索日 + 航线 + 出发日 + 起飞 Epoch + 舱型”。正式发布行数为 714,982；当前版本的 `07_duplicate_cabin_grain` 已按新粒度检查，重复数为 0。10 项 MySQL ADS 质量检查全部通过。业务抽查中，`2022-04-19 / LAX -> BOS / 2022-04-26` 返回 67 个唯一起飞时刻，重复数为 0。
 
 ## 6. 常用查询
 

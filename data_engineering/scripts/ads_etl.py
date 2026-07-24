@@ -105,6 +105,10 @@ def quote_segment_features(spark: SparkSession, database: str) -> DataFrame:
                 F.col("segment_index"),
                 F.col("cabin_code"),
                 F.col("equipment_description"),
+                F.col("departure_time_raw"),
+                F.col("departure_time_epoch"),
+                F.col("arrival_time_raw"),
+                F.col("arrival_time_epoch"),
             )
         )
     )
@@ -138,6 +142,18 @@ def quote_segment_features(spark: SparkSession, database: str) -> DataFrame:
             F.concat_ws("||", "cabin_codes").alias("cabin_summary"),
             (F.size("known_cabins") > 1).alias("is_mixed_cabin"),
             F.concat_ws("||", equipment).alias("equipment_summary"),
+            F.element_at("ordered_segments", 1)
+            .getField("departure_time_raw")
+            .alias("departure_time_raw"),
+            F.element_at("ordered_segments", 1)
+            .getField("departure_time_epoch")
+            .alias("departure_time_epoch"),
+            F.element_at("ordered_segments", -1)
+            .getField("arrival_time_raw")
+            .alias("arrival_time_raw"),
+            F.element_at("ordered_segments", -1)
+            .getField("arrival_time_epoch")
+            .alias("arrival_time_epoch"),
         )
     )
 
@@ -202,6 +218,11 @@ def route_lowest_price(quotes: DataFrame) -> DataFrame:
         "destination_country_code",
         "destination_country_name",
         "flight_date",
+        "departure_time_raw",
+        "departure_time_epoch",
+        "arrival_time_raw",
+        "arrival_time_epoch",
+        "travel_duration_minutes",
         F.col("total_fare").cast("decimal(12,2)").alias("lowest_price"),
         "avg_price",
         "quote_snapshot_id",
@@ -223,6 +244,7 @@ def route_cabin_lowest_price(quotes: DataFrame) -> DataFrame:
         "market_origin",
         "market_destination",
         "flight_date",
+        "departure_time_epoch",
         "cabin_type",
     ]
     group_window = Window.partitionBy(*group_columns)
@@ -251,6 +273,11 @@ def route_cabin_lowest_price(quotes: DataFrame) -> DataFrame:
         "destination_country_code",
         "destination_country_name",
         "flight_date",
+        "departure_time_raw",
+        "departure_time_epoch",
+        "arrival_time_raw",
+        "arrival_time_epoch",
+        "travel_duration_minutes",
         "cabin_type",
         "cabin_summary",
         "is_mixed_cabin",
@@ -348,6 +375,16 @@ def validate(
                 | F.col("cabin_summary").isNull()
                 | F.col("equipment_summary").isNull()
                 | F.col("seats_remaining").isNull()
+                | F.col("departure_time_raw").isNull()
+                | F.col("arrival_time_raw").isNull()
+                | F.col("departure_time_epoch").isNull()
+                | F.col("arrival_time_epoch").isNull()
+                | F.col("travel_duration_minutes").isNull()
+                | (F.length(F.trim("departure_time_raw")) == 0)
+                | (F.length(F.trim("arrival_time_raw")) == 0)
+                | (F.col("departure_time_epoch") <= 0)
+                | (F.col("arrival_time_epoch") <= F.col("departure_time_epoch"))
+                | (F.col("travel_duration_minutes") <= 0)
                 | (F.col("lowest_price") > F.col("avg_price"))
                 | (F.col("seats_remaining") < 0),
                 1,
@@ -364,6 +401,16 @@ def validate(
                 | F.col("avg_price").isNull()
                 | (F.col("offer_count") <= 0)
                 | F.col("seats_remaining").isNull()
+                | F.col("departure_time_raw").isNull()
+                | F.col("arrival_time_raw").isNull()
+                | F.col("departure_time_epoch").isNull()
+                | F.col("arrival_time_epoch").isNull()
+                | F.col("travel_duration_minutes").isNull()
+                | (F.length(F.trim("departure_time_raw")) == 0)
+                | (F.length(F.trim("arrival_time_raw")) == 0)
+                | (F.col("departure_time_epoch") <= 0)
+                | (F.col("arrival_time_epoch") <= F.col("departure_time_epoch"))
+                | (F.col("travel_duration_minutes") <= 0)
                 | (F.col("lowest_price") > F.col("avg_price"))
                 | (F.col("seats_remaining") < 0),
                 1,

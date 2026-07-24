@@ -24,7 +24,7 @@ interface Message {
   time: string
 }
 
-// 统一响应式变量命名
+// --- 统一响应式变量命名（重点：统一使用 departureDate） ---
 const fromCity = ref('')
 const toCity = ref('')
 const departureDate = ref('')
@@ -41,7 +41,7 @@ const messageList = ref<Message[]>([
   {
     id: 1,
     role: 'assistant',
-    content: '您好！我是您的 AI 智能飞行助手。请先确认对话框中的出发城市、目的城市及出发日期，我将为您精准推荐最优质的航班方案。',
+    content: '您好！我是您的 AI 智能飞行助手。请先确认对话框中的出发机场、目的地机场及出发日期，我将为您精准推荐最优质的航班方案。',
     time: getCurrentTime()
   }
 ])
@@ -91,6 +91,7 @@ const formatRecommendationToText = (recommendations: RecommendItem[]) => {
 const handleSend = async (customPrompt?: string) => {
   if (isLoading.value) return
 
+  // ✅ 修正：使用正确变量 departureDate
   if (!fromCity.value || !toCity.value || !departureDate.value) {
     ElMessage.warning('请确保已选择出发地、目的地和出发日期！')
     return
@@ -278,7 +279,7 @@ onMounted(() => {
           <div class="input-container-box">
             <div class="inline-search-bar">
 
-              <!-- 出发城市 -->
+              <!-- 出发城市（使用 inline style 强制锁定宽度，防止 CSS 失效） -->
               <el-select v-model="fromCity" placeholder="出发城市" class="city-select-box" style="width: 150px;">
                 <el-option v-for="item in originOptions" :key="item.value" :label="item.label" :value="item.value" />
               </el-select>
@@ -376,6 +377,7 @@ onMounted(() => {
 .inline-search-bar { display: flex; align-items: center; gap: 12px; width: 100%; }
 .flex-spacer { flex: 1; }
 
+/* 双重锁死输入框宽度 */
 :deep(.city-select-box) { width: 150px !important; }
 :deep(.date-select-box) { width: 170px !important; }
 
@@ -389,3 +391,4 @@ onMounted(() => {
 @keyframes dotBounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
 </style>
 
+```

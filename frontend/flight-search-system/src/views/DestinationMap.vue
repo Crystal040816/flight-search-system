@@ -12,7 +12,7 @@ import { getWhereToGo, type DestinationItem } from '@/api/gowhere'
 
 const router = useRouter()
 
-// 顶栏筛选条件
+// --- 1. 顶栏筛选条件 ---
 const fromCity = ref('')
 const departureDate = ref('')
 const originOptions = ref<{ label: string; value: string }[]>([])
@@ -29,7 +29,7 @@ const cityCoordinates: Record<string, [number, number]> = {
   'Boston': [42.3601, -71.0589],
   'Charlotte': [35.2271, -80.8431],
   'Chicago': [41.8781, -87.6298],
-  'Dallas-Fort Worth': [32.7767, -96.7970],
+  'Dallas-Fort Worth': [32.7767, -96.7970], // 修正为标准的经纬度
   'Denver': [39.7392, -104.9903],
   'Detroit': [42.3314, -83.0458],
   'Dulles': [38.9531, -77.4565],
@@ -62,7 +62,7 @@ const disabledDepartureDate = (time: Date) => {
   return !availableDates.value.includes(dateStr)
 }
 
-// 渲染地图气泡
+// --- 2. 渲染地图气泡 ---
 const renderPriceMarkers = () => {
   if (!map) {
     console.warn('[Leaflet] 地图尚未初始化完成，取消打点')
@@ -120,29 +120,28 @@ const renderPriceMarkers = () => {
   }
 }
 
-// 点击气泡跳转逻辑
+// map2.vue 中的跳转逻辑
 const handleMarkerClick = (target: DestinationItem) => {
   console.log('点击气泡跳转航班搜索:', target)
 
   router.push({
-    path: '/search',
+    path: '/search', // 请根据你的实际搜索页路由 path 调整（如 /flight-search）
     query: {
-      fromCity: target.departureCity,
-      fromAirport: target.departure,
-      toCity: target.city,
-      toAirport: target.destination,
-      date: departureDate.value,
-      autoSearch: 'true'
+      fromCity: target.departureCity, // 出发城市 (例如: Atlanta)
+      fromAirport: target.departure,  // 出发机场三字码 (例如: ATL)
+      toCity: target.city,            // 目的城市 (例如: Newark)
+      toAirport: target.destination,  // 目的机场三字码 (例如: EWR)
+      date: departureDate.value,      // 出发日期 (例如: 2022-04-19)
+      autoSearch: 'true'              // 自动触发搜索标识
     }
   })
 }
 
 const handleSearch = async () => {
-  // 默认参数
+  // 1. 兜底默认参数（确保一定会传参）
   const payload = {
     departureCity: fromCity.value || 'Atlanta',
-    date: departureDate.value || '2022-04-20',
-    searchDate: '2022-04-19'
+    date: departureDate.value || '2022-04-19'
   }
 
   console.log('发起接口请求 /api/destinations，请求体为:', payload)
@@ -189,7 +188,7 @@ const loadOrigins = async () => {
     }
   } catch (e) {
     console.error('获取出发城市失败', e)
-    fromCity.value = 'Atlanta' // 默认值
+    fromCity.value = 'Atlanta' // 兜底默认值
   }
 }
 
@@ -204,7 +203,7 @@ const loadDates = async () => {
     }
   } catch (e) {
     console.error('获取可选日期失败', e)
-    departureDate.value = '2022-04-19' // 默认值
+    departureDate.value = '2022-04-19' // 兜底默认值
   }
 }
 
@@ -286,7 +285,7 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* 基础框架与顶栏样式 */
+/* ==================== 基础框架与顶栏样式 ==================== */
 .page-wrapper-non-scrollable {
   position: fixed;
   top: 0;
@@ -334,7 +333,7 @@ onUnmounted(() => {
 .map-core-content-blue-style { width: 100%; height: 100%; z-index: 1; filter: hue-rotate(5deg) contrast(105%) saturate(110%); }
 :deep(.leaflet-container) { background: #b3d1ff !important; }
 
-/* 气泡 Marker 样式 */
+/* ==================== 气泡 Marker 样式 ==================== */
 :deep(.custom-leaflet-icon-wrapper) {
   overflow: visible !important;
   background: none !important;

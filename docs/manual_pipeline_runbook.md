@@ -142,6 +142,26 @@ mysql --defaults-extra-file="$HOME/.flight_ads_writer.cnf" \
 
 随后先运行更新后 `ads_etl.py --dry-run`。验证通过且获得写入确认后，才允许正式覆盖 ADS，并执行 `data_engineering/mysql/ads_quality_checks.sql`。升级脚本不能重复执行。
 
+### ADS 2026-07-23 时间字段升级
+
+本次扩展只读取现有 DWD 行程和航段字段，不修改 ODS、DWD 或 DWS。它为两张最低价表增加首航段起飞时间、末航段到达时间、对应 Epoch 秒和整条行程总时长。发布前必须先备份 MySQL `flight_ads`，再执行一次：
+
+```bash
+mysql --defaults-extra-file="$HOME/.flight_ads_writer.cnf" \
+  < /home/hadoop/flight_project/staging_ads_20260723/ads_schema_upgrade_20260723.sql
+```
+
+升级脚本不能重复执行。随后使用新的 HDFS 暂存路径重新计算 ADS，先执行 staged data dry-run，再由 `node-master` 本地 Spark 写入 MySQL。发布后 `09_invalid_route_times` 和 `10_invalid_cabin_times` 必须为 0。
+
+前端需要按不同起飞时刻展示最低价时，在新暂存数据验证通过后、正式发布前执行一次舱型表粒度升级：
+
+```bash
+mysql --defaults-extra-file="$HOME/.flight_ads_writer.cnf" \
+  < /home/hadoop/flight_project/staging_ads_20260723/ads_schema_upgrade_cabin_time_grain_20260723.sql
+```
+
+该脚本会清空尚未更新时间字段的旧舱型表，并把主键改为“搜索日 + 航线 + 出发日 + 起飞 Epoch + 舱型”；因此只能在备份有效且新暂存数据已验证后执行。升级后立即发布新版四表结果。此前按旧粒度生成的暂存结果不得发布。
+
 MySQL 仅监听 `node-master` 的 `127.0.0.1` 时，YARN executor 不能直接使用 JDBC 写入。ADS 发布应拆成两个阶段：先使用 `--stage-output` 在 YARN 上将四张 ADS 结果暂存到 HDFS，再在 `node-master` 使用本地 Spark 和 `--publish-staged` 写入 MySQL。不要为此把 MySQL 暴露到集群网络。
 
 推荐命令形态：
