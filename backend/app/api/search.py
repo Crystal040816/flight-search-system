@@ -253,163 +253,161 @@ def get_airlines_list():
 @search_bp.route('/search', methods=['POST'])
 def search_flights():
     """
-       高级航班指标联合搜索接口 (根据起飞、降落机场、出行日期进行精准检索)
-       ---
-       tags:
-         - 搜索
-       summary: 机票指标纯数仓驱动查询 (精准物理匹配版)
-       description: "支持按出发机场、目的地机场、出行日期进行高精度的三表 (LEFT JOIN) 联合查询。返回 11 个核心业务指标。"
-       parameters:
-         - name: body
-           in: body
-           required: true
-           schema:
-             type: object
-             required:
-               - departure
-               - destination
-               - flightDate
-             properties:
-               departure:
-                 type: string
-                 description: "出发地机场 IATA 三字码 (必填)"
-                 example: "LGA"
-               destination:
-                 type: string
-                 description: "目的地机场 IATA 三字码 (必填)"
-                 example: "SFO"
-               flightDate:
-                 type: string
-                 format: date
-                 description: "起飞日期 (2022-04-20 至 2022-06-21) (必填)"
-                 example: "2022-06-08"
-               searchDate:
-                 type: string
-                 format: date
-                 description: "搜索快照分区日 (2022-04-18 至 2022-04-27)"
-                 default: "2022-04-19"
-                 example: "2022-04-19"
-               cabinCode:
-                 type: string
-                 description: "舱型筛选 (对应数仓 cabin_type 列)"
-                 default: "economy"
-                 example: "economy"
-               page:
-                 type: integer
-                 default: 1
-                 example: 1
-               size:
-                 type: integer
-                 default: 10
-                 example: 10
-               sortBy:
-                 type: string
-                 enum: [price]
-                 default: price
-                 example: "price"
-               filters:
-                 type: object
-                 properties:
-                   airlines:
-                     type: array
-                     items:
-                       type: string
-                     example: ["UA", "DL"]
-       responses:
-         200:
-           description: "成功返回多表联查宽表业务指标"
-           schema:
-             type: object
-             properties:
-               code:
-                 type: integer
-                 example: 200
-               data:
-                 type: object
-                 properties:
-                   total:
-                     type: integer
-                     example: 1
-                   flights:
-                     type: array
-                     items:
-                       type: object
-                       properties:
-                         legId:
-                           type: string
-                           example: "7a3ff1abd3aef9a..."
-                         departureTime:
-                           type: string
-                           example: "2022-06-08 09:00"
-                         duration:
-                           type: string
-                           example: "2h30m"
-                         lowestPrice:
-                           type: number
-                           description: "出发日该航线最低含税报价 (USD)"
-                           example: 166.61
-                         avgPrice:
-                           type: number
-                           description: "出发日该航线平均含税报价 (USD)"
-                           example: 240.50
-                         routeRank:
-                           type: integer
-                           description: "当日该航线在数仓中的报价供给排名"
-                           example: 12
-                         previousDayAvgPrice:
-                           type: number
-                           description: "样本中前一日均价"
-                           example: 235.00
-                         priceChangePct:
-                           type: number
-                           description: "相对前一日的变价百分比"
-                           example: 0.0234
-                         routeQuoteCount:
-                           type: integer
-                           description: "该航线当日的搜索快照报价总数"
-                           example: 320
-                         distinctLegCount:
-                           type: integer
-                           description: "该航线当日的不同行程方案数"
-                           example: 45
-                         offerSharePct:
-                           type: number
-                           description: "执飞航司在当日的报价供给百分比 (占100的比例)"
-                           example: 12.3456
-                         airlineAvgPrice:
-                           type: number
-                           description: "该航司在当日的平均含税报价 (USD)"
-                           example: 180.20
-                         airline:
-                           type: string
-                           description: "执飞航空公司名称 (已补齐文档)"
-                           example: "American Airlines"
-                         airlineCode:
-                           type: string
-                           description: "执飞航空公司代码 (已补齐文档)"
-                           example: "AA"
-                         departure:
-                           type: string
-                           example: "LGA"
-                         destination:
-                           type: string
-                           example: "SFO"
-                         departureCity:
-                           type: string
-                           example: "纽约"
-                         destinationCity:
-                           type: string
-                           example: "旧金山"
-                         destinationCountryCode:
-                           type: string
-                           example: "US"
-                         destinationCountryName:
-                           type: string
-                           example: "United States"
-                         cabin:
-                           type: string
-                           example: "economy"
-       """
+    高级航班指标联合搜索接口 (根据起飞、降落机场、出行日期进行精准检索)
+    ---
+    tags:
+      - 搜索
+    summary: 机票指标纯数仓驱动查询 (精准物理匹配版)
+    description: 支持按出发机场、目的地机场、出行日期进行高精度的三表 (LEFT JOIN) 联合查询。返回 11 个核心业务指标。
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - departure
+            - destination
+            - flightDate
+          properties:
+            departure:
+              type: string
+              description: 出发地机场 IATA 三字码 (必填)
+              example: "LGA"
+            destination:
+              type: string
+              description: 目的地机场 IATA 三字码 (必填)
+              example: "SFO"
+            flightDate:
+              type: string
+              format: date
+              description: 起飞日期 (2022-04-20 至 2022-06-21) (必填)
+              example: "2022-06-08"
+            searchDate:
+              type: string
+              format: date
+              description: 搜索快照分区日 (2022-04-18 至 2022-04-27)
+              default: "2022-04-19"
+              example: "2022-04-19"
+            cabinCode:
+              type: string
+              description: 舱型筛选 (对应数仓 cabin_type 列)
+              default: "economy"
+              example: "economy"
+            page:
+              type: integer
+              default: 1
+              example: 1
+            size:
+              type: integer
+              default: 10
+              example: 10
+            sortBy:
+              type: string
+              enum: [price]
+              default: price
+              example: "price"
+            filters:
+              type: object
+              properties:
+                airlines:
+                  type: array
+                  items:
+                    type: string
+                  example: ["UA", "DL"]
+    responses:
+      200:
+        description: 成功返回多表联查宽表业务指标
+        schema:
+          type: object
+          properties:
+            code:
+              type: integer
+              example: 200
+            data:
+              type: object
+              properties:
+                total:
+                  type: integer
+                  example: 1
+                flights:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      legId:
+                        type: string
+                        example: "7a3ff1abd3aef9a..."
+                      departureTime:
+                        type: string
+                        description: 出比起飞时间 (格式如 2022-06-08, 15:51:00)
+                        example: "2022-06-08, 15:51:00"
+                      arrivalTime:
+                        type: string
+                        description: 到达降落时间 (格式如 2022-06-08, 17:51:00)
+                        example: "2022-06-08, 17:51:00"
+                      duration:
+                        type: string
+                        description: 飞行时长 (中文几时几分格式)
+                        example: "2时30分"
+                      lowestPrice:
+                        type: number
+                        description: 出发日该航线最低含税报价 (USD)
+                        example: 166.61
+                      avgPrice:
+                        type: number
+                        description: 出发日该航线平均含税报价 (USD)
+                        example: 240.50
+                      routeRank:
+                        type: integer
+                        description: 当日该航线在数仓中的报价供给排名 (对应 ads_route_offer_rank.rank_num)
+                        example: 12
+                      previousDayAvgPrice:
+                        type: number
+                        description: 样本中前一日均价 (对应 ads_route_offer_rank.previous_day_avg_price)
+                        example: 235.00
+                      priceChangePct:
+                        type: number
+                        description: 相对前一日的变价百分比 (对应 ads_route_offer_rank.price_change_pct)
+                        example: 0.0234
+                      routeQuoteCount:
+                        type: integer
+                        description: 该航线当日的搜索快照报价总数 (对应 ads_route_offer_rank.quote_count)
+                        example: 320
+                      distinctLegCount:
+                        type: integer
+                        description: 该航线当日的不同行程方案数 (对应 ads_route_offer_rank.distinct_leg_count)
+                        example: 45
+                      offerSharePct:
+                        type: number
+                        description: 执飞航司在当日的报价供给百分比 (对应 ads_airline_offer_share.offer_share_pct)
+                        example: 12.3456
+                      airlineAvgPrice:
+                        type: number
+                        description: 该航司在当日该航线的平均含税报价 (对应 ads_airline_offer_share.avg_price)
+                        example: 180.20
+                      departure:
+                        type: string
+                        example: "LGA"
+                      destination:
+                        type: string
+                        example: "SFO"
+                      departureCity:
+                        type: string
+                        example: "纽约"
+                      destinationCity:
+                        type: string
+                        example: "旧金山"
+                      destinationCountryCode:
+                        type: string
+                        example: "US"
+                      destinationCountryName:
+                        type: string
+                        example: "United States"
+                      cabin:
+                        type: string
+                        example: "economy"
+    """
     try:
         data = request.get_json()
         if not data:
@@ -427,8 +425,8 @@ def search_flights():
             departure_city=data.get('departureCity'),
             destination_city=data.get('destinationCity'),
             flight_date=data.get('flightDate'),
-            search_date=data.get('searchDate'),  # 去掉默认 '2022-04-19'，交给服务层动态匹配
-            cabin_code=data.get('cabinCode'),  # 关键修改：去掉默认 'economy'，改用 None，不强制过滤
+            search_date=data.get('searchDate', '2022-04-19'),
+            cabin_code=data.get('cabinCode', 'economy'),
             page=data.get('page', 1),
             size=data.get('size', 20),
             sort_by=data.get('sortBy', 'price'),

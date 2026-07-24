@@ -25,13 +25,41 @@ class FlightSearchService:
             cursorclass=pymysql.cursors.DictCursor
         )
 
-    # ----------------------------------------------------------------
-    # 1. 修复：【出发城市】列表 - 直接去重检索物理列 origin_city
-    # ----------------------------------------------------------------
+    def _format_iso_time(self, time_str: str) -> str:
+        """
+        高安全解析：将 "2022-06-08T15:51:00.000-07:00"
+        解析并格式化为 "2022-06-08, 15:51:00"
+        """
+        if not time_str:
+            return "N/A"
+        try:
+            parts = time_str.split('T')
+            date_part = parts[0]
+            time_part = parts[1].split('.')[0]
+            return f"{date_part}, {time_part}"
+        except Exception:
+            return time_str
+
+    def _format_duration_minutes(self, minutes) -> str:
+        """
+        将整数分钟数（如 150）转换为 "2时30分" 的格式
+        """
+        if minutes is None or minutes == "":
+            return "N/A"
+        try:
+            total_mins = int(minutes)
+            hrs = total_mins // 60
+            mins = total_mins % 60
+            if hrs > 0:
+                return f"{hrs}时{mins}分"
+            else:
+                return f"{mins}分"
+        except Exception:
+            return f"{minutes}分"
+
     def get_active_origin_cities(self):
         try:
             conn = self._get_db_connection()
-            # 纯数仓驱动：直接去重读取物理列 origin_city
             sql = """
                   SELECT DISTINCT origin_city as city_name
                   FROM ads_route_cabin_lowest_price
@@ -46,13 +74,10 @@ class FlightSearchService:
         except Exception as e:
             print(f"[MySQL Error] 获取出发城市列表失败: {str(e)}")
             return ["Chicago", "Boston", "New York"]
-    # ----------------------------------------------------------------
-    # 2. 修复：【目的城市】列表 - 直接去重检索物理列 destination_city
-    # ----------------------------------------------------------------
+
     def get_active_destination_cities(self):
         try:
             conn = self._get_db_connection()
-            # 纯数仓驱动：直接去重读取物理列 destination_city
             sql = """
                   SELECT DISTINCT destination_city as city_name
                   FROM ads_route_cabin_lowest_price
@@ -67,9 +92,7 @@ class FlightSearchService:
         except Exception as e:
             print(f"[MySQL Error] 获取目的城市列表失败: {str(e)}")
             return ["New York", "San Francisco", "Boston"]
-    # ----------------------------------------------------------------
-    # 接口 3: 获取可用的起飞出行日期列表 (100% 物理列 flight_date 驱动)
-    # ----------------------------------------------------------------
+
     def get_active_flight_dates(self):
         try:
             conn = self._get_db_connection()
@@ -83,9 +106,6 @@ class FlightSearchService:
             print(f"[MySQL Error] 获取可用日期失败: {str(e)}")
             return []
 
-    # ----------------------------------------------------------------
-    # 接口 4: 获取可售的【舱型列表】 (100% 物理列 cabin_type 驱动)
-    # ----------------------------------------------------------------
     def get_active_cabins(self):
         try:
             conn = self._get_db_connection()
@@ -104,14 +124,10 @@ class FlightSearchService:
             print(f"[MySQL Error] 获取可用舱型失败: {str(e)}")
             return []
 
-    # ----------------------------------------------------------------
-    # 接口 5: 根据【出发城市】联动过滤获取【出发机场】(100% 物理列驱动)
-    # ----------------------------------------------------------------
     def get_active_origins(self, city_filter: str = None):
         try:
             conn = self._get_db_connection()
             if city_filter:
-                # 纯数仓物理列关联：直接通过 origin_city 检索对应的出发机场代码
                 sql = """
                       SELECT DISTINCT market_origin as airport_code
                       FROM ads_route_cabin_lowest_price
@@ -130,14 +146,10 @@ class FlightSearchService:
             print(f"[MySQL Error] 获取出发机场失败: {str(e)}")
             return ["ORD", "LGA"]
 
-    # ----------------------------------------------------------------
-    # 接口 6: 根据【目的地城市】联动过滤获取【目的地机场】(100% 物理列驱动)
-    # ----------------------------------------------------------------
     def get_active_destinations(self, city_filter: str = None):
         try:
             conn = self._get_db_connection()
             if city_filter:
-                # 纯数仓物理列关联：直接通过 destination_city 检索对应的降落机场代码
                 sql = """
                       SELECT DISTINCT market_destination as airport_code
                       FROM ads_route_cabin_lowest_price
@@ -156,36 +168,13 @@ class FlightSearchService:
             print(f"[MySQL Error] 获取目的机场失败: {str(e)}")
             return ["LGA", "SFO"]
 
-    # ----------------------------------------------------------------
-    # 接口 7: 获取可用航空公司 (100% 物理列驱动)
-    # ----------------------------------------------------------------
-    def get_active_airlines(self):
-        try:
-            conn = self._get_db_connection()
-            sql = "SELECT DISTINCT airline_code, airline_name FROM ads_route_cabin_lowest_price"
-            with conn.cursor() as cursor:
-                cursor.execute(sql)
-                rows = cursor.fetchall()
-            conn.close()
-            airlines = []
-            for row in rows:
-                if row["airline_code"] and row["airline_name"]:
-                    airlines.append({
-                        "code": row["airline_code"],
-                        "name": row["airline_name"]
-                    })
-            return sorted(airlines, key=lambda x: x["code"])
-        except Exception as e:
-            print(f"[MySQL Error] 获取活跃航司失败: {str(e)}")
-            return []
-
     def search_flights(self, departure: str = None, destination: str = None,
                        departure_city: str = None, destination_city: str = None,
                        flight_date: str = None, search_date: str = None,
                        cabin_code: str = None, page: int = 1, size: int = 20,
                        sort_by: str = "price", filters: dict = None):
         """
-        100% 动态多表联查：支持按城市、机场、任意日期与舱型灵活检索
+        100% 动态多表联查：直连真实 ads_route_cabin_lowest_price 表，解析真实的起降时间与飞行时长
         """
         print(
             f"[SQL Debug] 收到查询请求: 出发={departure}/{departure_city}, 目的={destination}/{destination_city}, 出行日期={flight_date}, 搜索日={search_date}, 舱型={cabin_code}")
@@ -196,7 +185,6 @@ class FlightSearchService:
             print(f"[MySQL Connection Error] {str(e)}")
             return {"total": 0, "flights": []}
 
-        # 1. 动态自适应 search_date (如果前端没传，自动去数据库里查出最新的一天作为默认分区)
         if not search_date:
             try:
                 with conn.cursor() as cursor:
@@ -204,10 +192,9 @@ class FlightSearchService:
                     res = cursor.fetchone()
                     search_date = res["max_date"].strftime("%Y-%m-%d") if res and res["max_date"] else "2022-04-19"
             except Exception as e:
-                print(f"[SQL Debug] 动态获取最新分区日失败，使用默认保底 2022-04-19: {str(e)}")
                 search_date = "2022-04-19"
 
-        # 2. 组装 SQL 基础查询
+        # 2. 组装 SQL 基础查询 (使用真实的新表)
         sql_base = """
             FROM ads_route_cabin_lowest_price lp
             LEFT JOIN ads_route_offer_rank rk 
@@ -223,7 +210,6 @@ class FlightSearchService:
 
         params = [search_date, flight_date]
 
-        # 3. 动态过滤：起飞城市 or 起飞机场
         if departure:
             sql_base += " AND lp.market_origin = %s"
             params.append(departure.upper())
@@ -231,7 +217,6 @@ class FlightSearchService:
             sql_base += " AND lp.origin_city = %s"
             params.append(departure_city)
 
-        # 目的城市 or 目的机场
         if destination:
             sql_base += " AND lp.market_destination = %s"
             params.append(destination.upper())
@@ -239,20 +224,15 @@ class FlightSearchService:
             sql_base += " AND lp.destination_city = %s"
             params.append(destination_city)
 
-        # 4. 【动态舱型过滤机制】
-        # 只有当用户显式传入了特定舱型(如 economy/business)且不为 'all' 或空时，才拼入 SQL 进行物理过滤。
-        # 如果不传，默认查出所有舱型，完美避开 'econy' 拼写错误拦截！
         if cabin_code and cabin_code.lower() not in ["all", "", "unknown"]:
             sql_base += " AND lp.cabin_type = %s"
             params.append(cabin_code)
 
-        # 航司多选过滤
         if filters and "airlines" in filters and filters["airlines"]:
             placeholders = ', '.join(['%s'] * len(filters["airlines"]))
             sql_base += f" AND lp.airline_code IN ({placeholders})"
             params.extend(filters["airlines"])
 
-        # 5. 组装统计与数据 SQL
         sql_count = f"SELECT COUNT(*) as total {sql_base}"
         sql_query = f"""
             SELECT 
@@ -261,6 +241,7 @@ class FlightSearchService:
                 lp.origin_city, lp.origin_country_code, lp.origin_country_name,
                 lp.destination_city, lp.destination_country_code, lp.destination_country_name,
                 lp.seats_remaining, lp.cabin_type, lp.cabin_summary, lp.is_mixed_cabin, lp.equipment_summary,
+                lp.departure_time_raw, lp.arrival_time_raw, lp.travel_duration_minutes,
                 rk.rank_num, rk.previous_day_avg_price, rk.price_change_pct, rk.quote_count as route_quote_count, rk.distinct_leg_count,
                 sh.offer_share_pct, sh.avg_price as airline_avg_price
             {sql_base}
@@ -287,16 +268,23 @@ class FlightSearchService:
             for row in rows:
                 flights_list.append({
                     "legId": row["quote_snapshot_id"],
-                    "departureTime": row["flight_date"].strftime("%Y-%m-%d") if row["flight_date"] else None,
-                    "duration": "N/A",
+                    "departureTime": self._format_iso_time(row["departure_time_raw"]),
+                    "arrivalTime": self._format_iso_time(row["arrival_time_raw"]),
+                    "duration": self._format_duration_minutes(row["travel_duration_minutes"]),
+
                     "lowestPrice": float(row["lowest_price"]) if row["lowest_price"] else 0.0,
+                    "price": float(row["lowest_price"]) if row["lowest_price"] else 0.0,
                     "avgPrice": float(row["route_avg_price"]) if row["route_avg_price"] else 0.0,
+
+                    # 1. 物理表一关联特征 (DWD 行程供给排行)
                     "routeRank": row["rank_num"] if row["rank_num"] else None,
                     "previousDayAvgPrice": float(row["previous_day_avg_price"]) if row[
                         "previous_day_avg_price"] else 0.0,
                     "priceChangePct": float(row["price_change_pct"]) if row["price_change_pct"] else 0.0,
                     "routeQuoteCount": int(row["route_quote_count"]) if row["route_quote_count"] else 0,
                     "distinctLegCount": int(row["distinct_leg_count"]) if row["distinct_leg_count"] else 0,
+
+                    # 2. 物理表二关联特征 (航司供给占比)
                     "offerSharePct": float(row["offer_share_pct"]) if row["offer_share_pct"] else 0.0,
                     "airlineAvgPrice": float(row["airline_avg_price"]) if row["airline_avg_price"] else 0.0,
 
@@ -325,6 +313,27 @@ class FlightSearchService:
             return {"total": 0, "flights": []}
         finally:
             conn.close()
+
+    def get_active_airlines(self):
+        try:
+            conn = self._get_db_connection()
+            sql = "SELECT DISTINCT airline_code, airline_name FROM ads_route_cabin_lowest_price"
+            with conn.cursor() as cursor:
+                cursor.execute(sql)
+                rows = cursor.fetchall()
+            conn.close()
+            airlines = []
+            for row in rows:
+                if row["airline_code"] and row["airline_name"]:
+                    airlines.append({
+                        "code": row["airline_code"],
+                        "name": row["airline_name"]
+                    })
+            return sorted(airlines, key=lambda x: x["code"])
+        except Exception as e:
+            print(f"[MySQL Error] 获取活跃航司失败: {str(e)}")
+            return []
+
 
 # 实例化
 search_service = FlightSearchService()
