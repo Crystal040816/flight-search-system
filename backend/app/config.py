@@ -23,7 +23,7 @@ class Config:
 
     # 新增：MySQL ADS 业务层配置 (通过本地转发端口 13306 访问，密码填写组长/数据同学给您的真实密码)
     MYSQL_HOST = '127.0.0.1'
-    MYSQL_PORT = 13306
+    MYSQL_PORT = 3306
     MYSQL_DB = 'flight_ads'
     MYSQL_USER = 'flight_ads_reader'
     MYSQL_PASSWORD = '123456'
