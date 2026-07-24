@@ -13,6 +13,7 @@ export interface DestinationItem {
 export interface WhereToGoParams {
   date: string
   departureCity: string
+  searchDate?: string
 }
 
 export interface WhereToGoResponse {

@@ -4,29 +4,70 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f762ef42-4659-4b92-81c8-3a17156ffc59" name="Changes" comment="前端代码初版（模拟数据）">
-      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/api/airline.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/api/airports.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/api/dates.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/api/destinations.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/api/flight.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/api/gowhere.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/api/origins.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/api/predict.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/api/recommend.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/api/splice.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/components/ZeppelinChart.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/utils/request.ts" afterDir="false" />
+    <list default="true" id="f762ef42-4659-4b92-81c8-3a17156ffc59" name="Changes" comment="接口更新">
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/App.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/api/airline.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/api/airports.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/api/dates.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/api/destinations.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/api/flight.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/api/gowhere.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/api/origins.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/api/predict.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/api/recommend.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/api/splice.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/assets/base.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/assets/logo.svg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/assets/main.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/components/ZeppelinChart.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/components/__tests__/HelloWorld.spec.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/components/icons/IconCommunity.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/components/icons/IconDocumentation.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/components/icons/IconEcosystem.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/components/icons/IconSupport.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/components/icons/IconTooling.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/main.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/pictures/天空.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/router/index.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/stores/counter.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/utils/request.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/views/Agent.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/views/DataDashboard.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/views/DestinationMap.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/views/FlightSearch.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src2/views/PricePredictor.vue" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/flight-search-system/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/flight-search-system/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/router/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/router/index.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/views/Agent.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/views/Agent.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/views/DataDashboard.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/views/DataDashboard.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/views/DestinationMap.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/views/DestinationMap.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/views/FlightSearch.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/views/FlightSearch.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/views/PricePredictor.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/views/PricePredictor.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/vite.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/flight-search-system/vite.config.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/App.vue" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/api/airline.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/api/airports.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/api/dates.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/api/destinations.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/api/flight.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/api/gowhere.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/api/origins.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/api/predict.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/api/recommend.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/api/splice.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/assets/base.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/assets/logo.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/assets/main.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/components/ZeppelinChart.vue" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/components/__tests__/HelloWorld.spec.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/components/icons/IconCommunity.vue" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/components/icons/IconDocumentation.vue" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/components/icons/IconEcosystem.vue" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/components/icons/IconSupport.vue" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/components/icons/IconTooling.vue" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/main.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/pictures/天空.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/router/index.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/stores/counter.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/utils/request.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/views/Agent.vue" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/views/DataDashboard.vue" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/views/DestinationMap.vue" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/views/FlightSearch.vue" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/views/PricePredictor.vue" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -55,17 +96,6 @@
       </list>
     </option>
   </component>
-  <component name="FlaskConsoleOptions" custom-start-script="import sys; print('Python %s on %s' % (sys.version, sys.platform)); sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])&#10;from flask.cli import ScriptInfo, NoAppException&#10;for module in [&quot;main.py&quot;, &quot;wsgi.py&quot;, &quot;app.py&quot;]:&#10;    try: locals().update(ScriptInfo(app_import_path=module, create_app=None).load_app().make_shell_context()); print(&quot;\nFlask App: %s&quot; % app.import_name); break&#10;    except NoAppException: pass">
-    <envs>
-      <env key="FLASK_APP" value="app" />
-    </envs>
-    <option name="myCustomStartScript" value="import sys; print('Python %s on %s' % (sys.version, sys.platform)); sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])&#10;from flask.cli import ScriptInfo, NoAppException&#10;for module in [&quot;main.py&quot;, &quot;wsgi.py&quot;, &quot;app.py&quot;]:&#10;    try: locals().update(ScriptInfo(app_import_path=module, create_app=None).load_app().make_shell_context()); print(&quot;\nFlask App: %s&quot; % app.import_name); break&#10;    except NoAppException: pass" />
-    <option name="myEnvs">
-      <map>
-        <entry key="FLASK_APP" value="app" />
-      </map>
-    </option>
-  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
@@ -80,62 +110,30 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;Python.run.executor&quot;: &quot;Run&quot;,
-    &quot;Python.test_services.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;WebServerToolWindowPanel.toolwindow.highlight.mappings&quot;: &quot;true&quot;,
-    &quot;WebServerToolWindowPanel.toolwindow.highlight.symlinks&quot;: &quot;true&quot;,
-    &quot;WebServerToolWindowPanel.toolwindow.show.date&quot;: &quot;false&quot;,
-    &quot;WebServerToolWindowPanel.toolwindow.show.permissions&quot;: &quot;false&quot;,
-    &quot;WebServerToolWindowPanel.toolwindow.show.size&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;feature/backend-api&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;SQL Resolution Scopes&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "C:/Users/Xiaoxia/AppData/Roaming/JetBrains/PyCharm2025.1/consoles/database-tool/ce5c350d-1c81-4024-8d9a-fa911063a499/console.sql": "flight_ads",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "feature/frontend",
+    "ignore.virus.scanning.warn.message": "true",
+    "last_opened_file_path": "D:/Anaconda/ANACONDA/project/flight-search-system/frontend/flight-search-system",
+    "settings.editor.selected.configurable": "db.project.configurable"
   }
-}</component>
-  <component name="RunManager">
-    <configuration name="test_services" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="flight-search-system" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/backend" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/backend/test_services.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <recent_temporary>
-      <list>
-        <item itemvalue="Python.test_services" />
-      </list>
-    </recent_temporary>
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\Anaconda\ANACONDA\project\flight-search-system\frontend\flight-search-system" />
+      <recent name="D:\Anaconda\ANACONDA\project\flight-search-system\frontend\flight-search-system\src" />
+      <recent name="D:\Anaconda\ANACONDA\project\flight-search-system\frontend\flight-search-system\src\views" />
+      <recent name="D:\Anaconda\ANACONDA\project\flight-search-system\frontend\flight-search-system\src\pictures" />
+    </key>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-6a121458b545-JavaScript-PY-251.25410.159" />
-        <option value="bundled-python-sdk-e0ed3721d81e-36ea0e71a18c-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-251.25410.159" />
+        <option value="bundled-python-sdk-657d8234b839-64d779b69b7a-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-251.26927.74" />
       </set>
     </attachedChunks>
   </component>
@@ -146,7 +144,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1784252625417</updated>
-      <workItem from="1784424391412" duration="18017000" />
     </task>
     <task id="LOCAL-00001" summary="前端代码初版（模拟数据）">
       <option name="closed" value="true" />
@@ -164,16 +161,39 @@
       <option name="project" value="LOCAL" />
       <updated>1784449140959</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="接口更新">
+      <option name="closed" value="true" />
+      <created>1784855725828</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1784855725828</updated>
+    </task>
+    <task id="LOCAL-00004" summary="接口更新">
+      <option name="closed" value="true" />
+      <created>1784890416469</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1784890416469</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
-  <component name="TypeScriptGeneratedFilesManager">
-    <option name="version" value="3" />
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
-  <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/flight_search_system$splice_service.coverage" NAME="splice_service 覆盖结果" MODIFIED="1784272889931" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/services" />
-    <SUITE FILE_PATH="coverage/flight_search_system$run.coverage" NAME="run 覆盖结果" MODIFIED="1784442479910" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend" />
-    <SUITE FILE_PATH="coverage/flight_search_system$test_services.coverage" NAME="test_services 覆盖结果" MODIFIED="1784444464237" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend" />
-    <SUITE FILE_PATH="coverage/flight_search_system$main.coverage" NAME="main 覆盖结果" MODIFIED="1784268806592" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app" />
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="前端代码初版（模拟数据）" />
+    <MESSAGE value="接口更新" />
+    <option name="LAST_COMMIT_MESSAGE" value="接口更新" />
   </component>
 </project>
