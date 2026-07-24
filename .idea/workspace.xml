@@ -4,18 +4,49 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f762ef42-4659-4b92-81c8-3a17156ffc59" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/pictures/天空.jpg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/views/Agent.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/views/DestinationMap.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/views/PricePredictor.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/flight-search-system.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/flight-search-system.iml" afterDir="false" />
+    <list default="true" id="f762ef42-4659-4b92-81c8-3a17156ffc59" name="Changes" comment="前端代码初版（模拟数据）">
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/api/airline.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/api/airports.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/api/dates.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/api/destinations.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/api/flight.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/api/gowhere.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/api/origins.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/api/predict.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/api/recommend.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/api/splice.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/components/ZeppelinChart.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/utils/request.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/flight-search-system/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/flight-search-system/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/router/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/router/index.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/views/Agent.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/views/Agent.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/views/DataDashboard.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/views/DataDashboard.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/views/DestinationMap.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/views/DestinationMap.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/views/FlightSearch.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/views/FlightSearch.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/src/views/PricePredictor.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/flight-search-system/src/views/PricePredictor.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/flight-search-system/vite.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/flight-search-system/vite.config.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="DBNavigator.Project.Workspace.Settings">
+    <assistant-settings>
+      <credential-settings>
+        <credentials />
+      </credential-settings>
+      <profile-settings>
+        <profiles />
+      </profile-settings>
+      <mcp-server-settings>
+        <workspace-integration value="false" />
+        <mcp-servers />
+        <mcp-tool-approvals />
+      </mcp-server-settings>
+    </assistant-settings>
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -38,16 +69,18 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "feature/frontend",
-    "last_opened_file_path": "D:/Anaconda/ANACONDA/project/flight-search-system/frontend/flight-search-system/src/views",
-    "settings.editor.selected.configurable": "preferences.fileTypes"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;C:/Users/Xiaoxia/AppData/Roaming/JetBrains/PyCharm2025.1/consoles/database-tool/ce5c350d-1c81-4024-8d9a-fa911063a499/console.sql&quot;: &quot;flight_ads&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;feature/frontend&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/Anaconda/ANACONDA/project/flight-search-system/frontend/flight-search-system/src/views&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;db.project.configurable&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="D:\Anaconda\ANACONDA\project\flight-search-system\frontend\flight-search-system\src\views" />
@@ -69,6 +102,23 @@
       <option name="presentableId" value="Default" />
       <updated>1784252625417</updated>
     </task>
+    <task id="LOCAL-00001" summary="前端代码初版（模拟数据）">
+      <option name="closed" value="true" />
+      <created>1784448122587</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1784448122587</updated>
+    </task>
+    <task id="LOCAL-00002" summary="前端代码初版（模拟数据）">
+      <option name="closed" value="true" />
+      <created>1784449140959</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1784449140959</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -81,5 +131,9 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="前端代码初版（模拟数据）" />
+    <option name="LAST_COMMIT_MESSAGE" value="前端代码初版（模拟数据）" />
   </component>
 </project>

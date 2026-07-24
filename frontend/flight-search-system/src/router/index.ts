@@ -1,5 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import FlightSearch from '../views/FlightSearch.vue'
+import PricePredictor from '../views/PricePredictor.vue'
+import DestinationMap from '../views/DestinationMap.vue'
+import Agent from '../views/Agent.vue'
+import DataDashboard from '../views/DataDashboard.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),

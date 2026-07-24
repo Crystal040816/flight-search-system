@@ -17,4 +17,12 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://node-master:8080',
+        changeOrigin: true, // 允许跨域
+      }
+    }
+  }
 })
