@@ -1,0 +1,69 @@
+{
+  "file": {
+    "name": "dwd_sample.parquet",
+    "size_bytes": 3597338,
+    "format": "Apache Parquet",
+    "created_by": "parquet-mr version 1.13.1 (build db4183109d5b734ec5930d870cdae161e408ddba)",
+    "row_groups": 1,
+    "rows": 50000,
+    "columns": 18
+  },
+  "quality": {
+    "duplicate_quote_snapshot_ids": 0,
+    "null_counts": {
+      "quote_snapshot_id": 0,
+      "search_date": 0,
+      "flight_date": 0,
+      "days_to_departure": 0,
+      "route_id": 0,
+      "market_origin": 0,
+      "market_destination": 0,
+      "first_airline_code": 0,
+      "travel_duration_minutes": 0,
+      "elapsed_days": 0,
+      "is_basic_economy": 0,
+      "is_refundable": 0,
+      "is_non_stop": 0,
+      "seats_remaining": 0,
+      "total_distance_miles": 2563,
+      "segment_count": 0,
+      "stop_count": 0,
+      "total_fare": 0
+    }
+  },
+  "date_profile": {
+    "search_date_min": "2022-04-19",
+    "search_date_max": "2022-04-19",
+    "search_date_distinct": 1,
+    "flight_date_min": "2022-04-20",
+    "flight_date_max": "2022-04-25",
+    "flight_date_distinct": 6
+  },
+  "coverage": {
+    "route_id_distinct": 234,
+    "market_origin_distinct": 16,
+    "market_destination_distinct": 16,
+    "first_airline_code_distinct": 12
+  },
+  "numeric_summary": {
+    "days_to_departure": {"min": 1, "max": 6, "mean": 3.25338},
+    "travel_duration_minutes": {"min": 48, "max": 1459, "mean": 412.14326},
+    "elapsed_days": {"min": 0, "max": 1, "mean": 0.13854},
+    "seats_remaining": {"min": 0, "max": 10, "mean": 4.44582},
+    "total_distance_miles": {"min": 97, "max": 3958, "mean": 1580.344393616797},
+    "segment_count": {"min": 1, "max": 4, "mean": 1.80102},
+    "stop_count": {"min": 0, "max": 3, "mean": 0.80102},
+    "total_fare": {"min": 35.98, "max": 4752.60, "mean": 394.5169272}
+  },
+  "top_airlines": [
+    ["AA", 16908], ["DL", 12779], ["UA", 11529], ["B6", 2730],
+    ["NK", 2563], ["AS", 2486], ["F9", 789], ["9K", 85],
+    ["SY", 54], ["9X", 34]
+  ],
+  "top_routes": [
+    ["LGA-LAX", 472], ["LAX-ATL", 459], ["ATL-LAX", 455],
+    ["JFK-LAX", 445], ["EWR-LAX", 439], ["LGA-ORD", 433],
+    ["LGA-MIA", 432], ["LAX-BOS", 427], ["BOS-LAX", 426],
+    ["LAX-EWR", 402]
+  ]
+}

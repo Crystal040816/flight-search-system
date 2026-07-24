@@ -1,0 +1,8 @@
+# Keep the self-contained sample package byte-stable across Windows and Linux.
+data_engineering/sample/*.csv text eol=lf
+data_engineering/sample/*.json text eol=lf
+data_engineering/sample/*.md text eol=lf
+data_engineering/sample/*.py text eol=lf
+data_engineering/sample/*.sql text eol=lf
+data_engineering/sample/*.txt text eol=lf
+data_engineering/sample/*.parquet binary
