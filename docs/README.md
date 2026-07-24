@@ -28,6 +28,7 @@ CSV 原始文件
 | [DWD 数据字典](dwd_data_dictionary.md) | 算法、数据工程成员 | 明细粒度、关联键、样本范围和字段口径 |
 | [DWS 数据字典](dws_data_dictionary.md) | 算法、分析成员 | 日度汇总指标及统计口径 |
 | [ADS 数据字典](ads_data_dictionary.md) | 后端、Superset、展示成员 | MySQL 表、主键、指标语义和查询示例 |
+| [后端本地 ADS 恢复说明](backend_ads_local_restore.md) | 后端成员 | SQL 备份校验、MySQL 本地恢复、只读账号和结果核对 |
 | [DWD HDFS 读取说明](../data_engineering/hive/dwd_hdfs_access.md) | 算法成员 | Spark/Hive/HDFS 读取方式 |
 | [质量检查与 Hive 质量表说明](../data_engineering/hive/dq_check_result_guide.md) | 全体成员 | DWD/DWS/ADS 验收结果和质量门禁 |
 | [手工运维与流水线运行手册](manual_pipeline_runbook.md) | 数据工程、运维成员 | 服务检查、启停顺序、只读验收和受控重跑 |
