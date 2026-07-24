@@ -10,7 +10,7 @@ import { getOriginCities } from '@/api/origins'
 import { getDestinationCities } from '@/api/destinations'
 import { getAvailableDates } from '@/api/dates'
 
-// --- 1. 响应式数据定义 ---
+// 1. 响应式数据定义
 const predictDays = ref<number>(7) // 预测未来 n 天 (默认 7)
 
 const originOptions = ref<{ label: string; value: string }[]>([])
@@ -40,7 +40,7 @@ const returnChartRef = ref<HTMLElement | null>(null)
 let departureChart: echarts.ECharts | null = null
 let returnChart: echarts.ECharts | null = null
 
-// --- 2. 辅助函数 ---
+// 2. 辅助函数
 // 互换出发地和目的地
 const swapCities = () => {
   const temp = fromCity.value
@@ -132,7 +132,7 @@ const updateCharts = () => {
   })
 }
 
-// --- 3. 核心 API 数据交互 ---
+// 3. 核心 API 数据交互
 const handleSearch = async () => {
   if (!departureDate.value || !fromCity.value || !toCity.value) return
 
@@ -227,7 +227,7 @@ const loadDestinations = async () => {
         if (destOptions.value.length > 1) {
           toCity.value = destOptions.value[1].value // 默认选中第二个
         } else if (destOptions.value.length === 1) {
-          toCity.value = destOptions.value[0].value // 容错兜底：若只有1个城市则选中第一个
+          toCity.value = destOptions.value[0].value
         }
       }
     }
@@ -298,7 +298,7 @@ const handleResize = () => {
   returnChart?.resize()
 }
 
-// --- 4. 生命周期钩子 ---
+// 4. 生命周期
 onMounted(async () => {
   await loadOrigins()
   await loadDestinations()
@@ -452,7 +452,6 @@ onMounted(async () => {
   gap: 12px;
 }
 
-/* 预测 n 天数字输入框样式 */
 .days-input-wrapper {
   display: flex;
   align-items: center;

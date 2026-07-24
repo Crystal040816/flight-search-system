@@ -17,11 +17,13 @@ export interface FlightSearchParams {
   filters: FlightSearchFilters
 }
 
+// 2. 航班数据项接口
 export interface FlightItem {
   aircraftModel?: string
   airline?: string
   airlineAvgPrice?: number
   airlineCode?: string
+  arrivalTime?: string
   avgPrice: number
   cabin?: string
   cabinSummary?: string
@@ -41,6 +43,7 @@ export interface FlightItem {
   lowestPrice: number
   offerSharePct?: number
   previousDayAvgPrice?: number
+  price?: number
   priceChangePct?: number
   routeQuoteCount?: number
   routeRank?: number

@@ -121,7 +121,8 @@ html, body {
 
 .main-content {
   flex: 1;
-  width: 0;
+  min-width: 0;
+  width: 100%;
   height: 100%;
   position: relative;
   padding: 0 !important;

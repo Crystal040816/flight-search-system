@@ -27,11 +27,17 @@ export interface SpliceRoute {
   totalPrice: number
 }
 
-// 智能拼接接口
+export interface SpliceData {
+  routes: SpliceRoute[]
+  total: number
+}
+
+export interface SpliceResponse {
+  code: number
+  data: SpliceData
+  message: string
+}
+
 export const getSpliceFlights = (data: SpliceParams) => {
-  return request({
-    url: '/api/splice',
-    method: 'post',
-    data
-  })
+  return request.post<SpliceResponse>('/api/splice', data)
 }
