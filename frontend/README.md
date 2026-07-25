@@ -2,54 +2,38 @@
 
 ## Notebook Note: 2MZABZFK3
 
-### Paragraph 1: Data Reload & View Initialization (%pyspark)
+### Paragraph 1: Data Reload & View Initialization (%sql)
 
-```python
-%pyspark
-# 1. 配置 MySQL 参数
-mysql_host = "127.0.0.1"
-jdbc_url = f"jdbc:mysql://{mysql_host}:3306/flight_ads?useSSL=false&characterEncoding=UTF-8"
-jdbc_user = "flight_ads_reader"
-jdbc_password = "123456"
+```sql
+%sql
+-- 1. 创建映射到 MySQL 的外表（只需要运行一次，即使重启 Zeppelin 也永久有效）
 
-# 需要重新加载的 ADS 表列表
-tables = ["ads_route_cabin_lowest_price", "ads_route_offer_rank", "ads_airline_offer_share"]
+CREATE TABLE IF NOT EXISTS ads_route_cabin_lowest_price
+USING org.apache.spark.sql.jdbc
+OPTIONS (
+  url 'jdbc:mysql://127.0.0.1:3306/flight_ads?useSSL=false&characterEncoding=UTF-8',
+  dbtable 'ads_route_cabin_lowest_price',
+  user 'flight_ads_reader',
+  password '123456'
+);
 
-# 2. 清理旧视图与内存缓存（安全修复版）
-print("🧹 正在清理旧的临时视图与缓存...")
-for table in tables:
-    # 只有当表/视图确实存在时，才去检查缓存和删除
-    if spark.catalog.tableExists(table):
-        if spark.catalog.isCached(table):
-            spark.catalog.uncacheTable(table)
-        spark.catalog.dropTempView(table)
-        print(f"  └─ 成功清理旧视图: {table}")
+CREATE TABLE IF NOT EXISTS ads_route_offer_rank
+USING org.apache.spark.sql.jdbc
+OPTIONS (
+  url 'jdbc:mysql://127.0.0.1:3306/flight_ads?useSSL=false&characterEncoding=UTF-8',
+  dbtable 'ads_route_offer_rank',
+  user 'flight_ads_reader',
+  password '123456'
+);
 
-# 清理 Spark SQL 的 Unused 内存缓存
-spark.catalog.clearCache()
-print("✅ 旧视图清理完毕！\n")
-
-# 3. 重新读取 MySQL 并注册新视图
-def reload_table(table_name):
-    df = spark.read \
-        .format("jdbc") \
-        .option("url", jdbc_url) \
-        .option("dbtable", table_name) \
-        .option("user", jdbc_user) \
-        .option("password", jdbc_password) \
-        .load()
-    
-    # 注册为全新临时视图
-    df.createOrReplaceTempView(table_name)
-    print(f"🔄 【{table_name}】重新加载成功！最新数据总行数: {df.count()}")
-    return df
-
-# 执行重新加载
-df_lowest_price = reload_table("ads_route_cabin_lowest_price")
-df_offer_rank   = reload_table("ads_route_offer_rank")
-df_offer_share  = reload_table("ads_airline_offer_share")
-
-print("\n🎉 所有临时视图已全部重置并重新生成！可以去重新运行后面的 %spark.sql 了。")
+CREATE TABLE IF NOT EXISTS ads_airline_offer_share
+USING org.apache.spark.sql.jdbc
+OPTIONS (
+  url 'jdbc:mysql://127.0.0.1:3306/flight_ads?useSSL=false&characterEncoding=UTF-8',
+  dbtable 'ads_airline_offer_share',
+  user 'flight_ads_reader',
+  password '123456'
+);
 ```
 
 ---
