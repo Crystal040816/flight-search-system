@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // 创建 axios 实例
 const request = axios.create({
-  baseURL: 'http://node-master:5000',
+  baseURL: 'http://192.168.100.27:5000',
   timeout: 10000
 })
 
